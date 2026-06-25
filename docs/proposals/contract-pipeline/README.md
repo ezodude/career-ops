@@ -28,7 +28,8 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 |----|-------|-------|------------|--------|
 | [CP-1](CP-1-discovery-adapter-framework.md) | Discovery adapter framework + Reed source | 1 | — | M |
 | [CP-2](CP-2-adzuna-apify-adapters.md) | Adzuna + Apify LinkedIn Jobs adapters | 1 | CP-1 | M |
-| [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1 | S |
+| [CP-9](CP-9-keyword-matching-precision.md) | Keyword matching precision | 1 | CP-1 | S |
+| [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1, CP-9 | S |
 | [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M |
 | [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L |
 | [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M |
@@ -37,7 +38,7 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 
 ## Build order
 
-1. CP-1 then CP-2 then CP-3. New contract supply, filtered.
+1. CP-1 then CP-2, then CP-9 then CP-3. New contract supply, matched precisely and filtered.
 2. CP-4. Free warm flagging on the new supply.
 3. CP-5 then CP-6. Manage the contract pipeline.
 4. CP-7. Sharpen ranking.

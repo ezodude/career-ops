@@ -17,6 +17,7 @@ This ticket generalises the scanner into a pluggable source-adapter model, then 
 - Reed supports `keywords`, `locationName`, `distanceFromLocation`, and a `contract` boolean. It returns contract type and salary per job.
 - Add `REED_API_KEY` to `.env.example`. Read secrets from `.env`.
 - Reed has no direct remote flag. Treat remote as a keyword and location post-filter (handled in CP-3).
+- Push exact phrases to the source API where supported, to cut noise before it reaches our filter. Keyword precision in the filter itself is CP-9.
 - Keep the whole path zero-token. Pure HTTP and JSON, no LLM call.
 
 ## Definition of Done

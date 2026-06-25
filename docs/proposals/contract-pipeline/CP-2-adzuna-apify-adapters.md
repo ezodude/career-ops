@@ -18,6 +18,7 @@ This ticket adds both adapters on top of the CP-1 framework.
   - Default the routine scan to the REST path to keep it free of tokens.
 - Add `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `APIFY_TOKEN` to `.env.example`.
 - Apify is a paid dependency. Gate it behind an explicit `enabled: true` in `portals.yml` so it never runs by surprise.
+- Push exact phrases to each source API where supported, to cut noise before it reaches our filter. Keyword precision in the filter itself is CP-9.
 
 ## Definition of Done
 
