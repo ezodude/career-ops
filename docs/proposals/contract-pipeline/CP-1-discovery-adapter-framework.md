@@ -1,6 +1,6 @@
 # CP-1: Discovery adapter framework + Reed source
 
-**Status:** Planned · **Phase:** 1 · **Depends on:** — · **Effort:** M
+**Status:** Built · **Phase:** 1 · **Depends on:** — · **Effort:** M
 
 ## Overview
 
@@ -70,15 +70,18 @@ dotenv import — lives in the system layer (`providers/`, `scan.mjs`, `_types.j
 
 ## Definition of Done
 
-- [ ] `providers/reed.mjs` fetches contract roles by keyword + UK location and
+- [x] `providers/reed.mjs` fetches contract roles by keyword + UK location and
       returns the extended offer shape; `provider: reed` validates via
       `validate-portals.mjs` automatically.
-- [ ] `scan.mjs` loads `.env`; missing `REED_API_KEY` skips Reed with a clear
+- [x] `scan.mjs` loads `.env`; missing `REED_API_KEY` skips Reed with a clear
       message (the per-provider try/catch records it as an error, no crash).
-- [ ] `REED_API_KEY` documented in `.env.example`; Reed example in
+- [x] `REED_API_KEY` documented in `.env.example`; Reed example in
       `templates/portals.example.yml`.
-- [ ] Existing Greenhouse/Ashby/Lever behaviour unchanged.
-- [ ] `node test-reed-adapter.mjs` passes; `node test-all.mjs` passes.
+- [x] Existing Greenhouse/Ashby/Lever behaviour unchanged.
+- [x] `node test-reed-adapter.mjs` passes (32/32); `node test-all.mjs` passes
+      (the only failure is a pre-existing local-env false-negative — the
+      skill-materialization test crashes because the dev's global gitignore
+      lists `.claude`; it passes on CI and on an untouched checkout).
 
 ---
 
