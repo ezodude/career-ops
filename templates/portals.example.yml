@@ -1280,6 +1280,21 @@ tracked_companies:
 
 job_boards:
 
+  # ── Reed (UK contract discovery — CP-1) ────────────────────────────
+  # UK's largest job board; surfaces contract gigs ATS boards never list.
+  # Requires REED_API_KEY in .env (free: https://www.reed.co.uk/developers).
+  # Without the key, this source is skipped with a clear message; the rest
+  # of the scan runs normally. Keyword precision is CP-9; remote/contract
+  # post-filtering is CP-3 — this entry only fetches and tags the supply.
+  # - name: Reed (UK AI contract)
+  #   provider: reed
+  #   enabled: true
+  #   keywords: '"AI Engineer" OR "LLM" OR "agentic" OR "machine learning"'
+  #   locationName: London          # any UK town/city/postcode
+  #   distanceFromLocation: 30       # miles from locationName
+  #   contract: true                 # Reed contract filter + tags offers contractType:'contract'
+  #   resultsToTake: 100             # Reed page cap (optional, default 100)
+
   # ── SolidJobs (Polish market) ──────────────────────────────────────
   # Public API — no auth needed. Division in URL path, campaign=career-ops for tracking.
   # Available divisions: it, engineering, marketing, sales, hr, logistics, finances, other

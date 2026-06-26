@@ -16,7 +16,7 @@ The user profile (`config/profile.yml`, `modes/_profile.md`) is already tuned fo
 
 Two engines plus a shared CRM store.
 
-- **Discovery engine.** API-only, no browser. Extends `scan.mjs` with new source adapters (Reed, Adzuna, Apify LinkedIn Jobs) and adds contract + location filtering.
+- **Discovery engine.** API-only, no browser. `scan.mjs` already loads a pluggable provider framework (`providers/*.mjs`, each a `{ id, fetch }` module wired via `portals.yml`), so new sources are **additive drop-in modules** — no scanner rewrite. This initiative adds source adapters (Reed, Adzuna, Apify LinkedIn Jobs) plus contract + location filtering on the shared pipeline.
 - **Warm engine.** Reachability scoring from a cached LinkedIn connections export. Free 1st-degree lookups, no scraping. Powers warm-intro prioritisation.
 - **CRM store.** Contract-economics columns, a relationship file, a reachability view, and bench-gap alerts.
 
