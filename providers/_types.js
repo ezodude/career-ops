@@ -30,6 +30,20 @@
  *                               usable date. scan.mjs ignores it; consumers
  *                               like scan-ats-full.mjs use it for recency
  *                               filtering.
+ * @property {object} [salary]   Structured comp, consumed by scan.mjs's
+ *                               salary_filter. Shape: { min?: number,
+ *                               max?: number, currency?: string }. Ashby and
+ *                               Reed populate it; most providers omit it.
+ * @property {('contract'|'permanent'|'temp')} [contractType]
+ *                               Engagement type when the source exposes it.
+ *                               Reed sets it from the query's `contract` flag.
+ *                               Filtering on it is CP-3, not the scanner core.
+ * @property {('remote'|'hybrid'|'onsite')} [remoteType]
+ *                               Work arrangement when known. Reed has no direct
+ *                               remote flag (CP-3 derives it); left unset here.
+ * @property {string} [compRaw]  The source's raw, unparsed comp string (e.g.
+ *                               "£500 - £650 per day"). Preserved for CP-7
+ *                               evaluation; never parsed by the scanner core.
  */
 
 /**
