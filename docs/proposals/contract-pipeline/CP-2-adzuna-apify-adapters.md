@@ -1,6 +1,6 @@
 # CP-2: Adzuna + Apify LinkedIn Jobs adapters
 
-**Status:** Proposed · **Phase:** 1 · **Depends on:** CP-1 · **Effort:** M
+**Status:** Built · **Phase:** 1 · **Depends on:** CP-1 · **Effort:** M
 
 ## Overview
 
@@ -22,9 +22,18 @@ This ticket adds both adapters on top of the CP-1 framework.
 
 ## Definition of Done
 
-- [ ] Adzuna adapter returns UK contract roles in the common offer shape.
-- [ ] Apify adapter (REST path) returns LinkedIn contract roles with no browser and no LinkedIn credentials.
-- [ ] Apify runs only when explicitly enabled in `portals.yml`; disabled by default.
-- [ ] All three new keys documented in `.env.example`; missing keys skip the source cleanly.
-- [ ] Apify cost behaviour documented in `docs/SCRIPTS.md` (per-job fee, how to cap volume).
-- [ ] `node scan.mjs --dry-run` shows results tagged by source; `test-all.mjs` passes.
+- [x] Adzuna adapter returns UK contract roles in the common offer shape. (`providers/adzuna.mjs`)
+- [x] Apify adapter (REST path) returns LinkedIn contract roles with no browser and no LinkedIn credentials. (`providers/apify.mjs`, `run-sync-get-dataset-items`)
+- [x] Apify runs only when explicitly enabled in `portals.yml`; disabled by default. (`entry.enabled !== true` → returns `[]`, no network)
+- [x] All three new keys documented in `.env.example`; missing keys skip the source cleanly (clear throw, rest of scan runs).
+- [x] Apify cost behaviour documented in `docs/SCRIPTS.md` (per-job fee, how to cap volume).
+- [x] `node scan.mjs --dry-run` shows results tagged by source (`adzuna-api`/`apify-api` via the shared sourceName path); `test-all.mjs` passes (445 pass; the 1 local failure is the pre-existing `.claude` global-gitignore quirk, green on CI).
+
+## Build notes
+
+- Built additively on the CP-1 provider framework — no `scan.mjs` change. Two drop-in `providers/*.mjs`.
+- `providers/adzuna.mjs` — mapped convenience fields (Reed-style): `buildSearchUrl`/`parseAdzunaDate`/`mapAdzunaJob`. 31 unit tests in `test-adzuna-adapter.mjs`.
+- `providers/apify.mjs` — raw `input:` passthrough (actor-agnostic), disabled-by-default gate, `normalizeActor`/`buildRunUrl`/`mapApifyJob`. 28 unit tests in `test-apify-adapter.mjs`.
+- Registered `test-reed-adapter.mjs` (previously unregistered), `test-adzuna-adapter.mjs`, `test-apify-adapter.mjs` in `test-all.mjs`.
+- Spec: `docs/superpowers/specs/2026-06-26-cp-2-adzuna-apify-design.md`. Plan: `docs/superpowers/plans/2026-06-26-cp-2-adzuna-apify.md`.
+- Live keys (`ADZUNA_APP_ID/KEY`, `APIFY_TOKEN`) and any enabled `job_boards` entries are user-layer (`.env`, `portals.yml`) — not added by this ticket.
