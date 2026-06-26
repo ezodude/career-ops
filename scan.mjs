@@ -234,6 +234,28 @@ export function buildContentFilter(contentFilter) {
   };
 }
 
+// ── Company filter ──────────────────────────────────────────────────
+// Optional. If `company_filter` is absent from portals.yml, all jobs pass.
+// Drops a job when job.company matches a user-layer blocklist (gig-mills,
+// staffing-spam, data-labeling platforms whose titles/JD read like real roles).
+// Reuses compileKeyword so company names match on token boundaries — "Alignerr"
+// won't over-match an unrelated employer, and a multi-word name like
+// "Crossing Hurdles" matches only as an ordered token run. Semantics:
+//   - Empty / whitespace-only / non-string company → PASS (don't drop on
+//     missing provider data)
+//   - any `negative` keyword matches → reject
+
+export function buildCompanyFilter(companyFilter) {
+  if (!companyFilter) return () => true;
+  const negative = normalizeKeywordList(companyFilter.negative).map(compileKeyword);
+
+  return (company) => {
+    if (typeof company !== 'string' || company.trim() === '') return true;
+    const lower = company.toLowerCase();
+    return !negative.some(m => m(lower));
+  };
+}
+
 // ── Salary filter ───────────────────────────────────────────────────
 // Optional. If `salary_filter` is absent from portals.yml, all salaries pass.
 // Semantics:

@@ -4537,6 +4537,60 @@ try {
   fail(`breezy provider tests crashed: ${e.message}`);
 }
 
+// ── 28. COMPANY FILTER (CP-9) ───────────────────────────────────
+console.log('\n28. Company filter — gig-mill exclusion');
+try {
+  const { buildCompanyFilter } = await import(pathToFileURL(join(ROOT, 'scan.mjs')).href);
+  const { mapApifyJob } = await import(pathToFileURL(join(ROOT, 'providers/apify.mjs')).href);
+
+  // Absent config → all companies pass.
+  const noFilter = buildCompanyFilter(null);
+  if (noFilter('Alignerr') === true && noFilter('Anyone') === true) {
+    pass('company_filter absent → all companies pass');
+  } else {
+    fail('company_filter absent should pass all companies');
+  }
+
+  const seeded = buildCompanyFilter({ negative: ['Alignerr', 'Crossing Hurdles', 'Great Value Hiring'] });
+
+  // Empty / non-string company passes (don't drop on missing provider data).
+  if (seeded('') === true && seeded('   ') === true && seeded(null) === true && seeded(42) === true) {
+    pass('company_filter passes empty/missing/non-string company');
+  } else {
+    fail('company_filter should pass empty/missing/non-string company');
+  }
+
+  // Seeded blocklist drops the real Apify gig-mill rows, keeps the legit one.
+  const fixture = JSON.parse(readFileSync(join(ROOT, 'fixtures/apify-linkedin-jobs-sample.json'), 'utf-8'));
+  const jobs = fixture.map(raw => mapApifyJob(raw, { name: 'Apify' }));
+  const kept = jobs.filter(j => seeded(j.company));
+  const dropped = jobs.filter(j => !seeded(j.company));
+  if (dropped.some(j => j.company === 'Crossing Hurdles') &&
+      dropped.some(j => j.company === 'Great Value Hiring') &&
+      kept.some(j => j.company === 'Premier Group')) {
+    pass('company_filter drops Crossing Hurdles/Great Value Hiring, keeps Premier Group');
+  } else {
+    fail(`company_filter fixture result wrong — kept=${JSON.stringify(kept.map(j => j.company))}, dropped=${JSON.stringify(dropped.map(j => j.company))}`);
+  }
+
+  // Token-boundary: a blocked word must not over-match a legit employer that
+  // merely contains the substring.
+  if (seeded('Alignerr') === false && seeded('Alignerrific Solutions') === true) {
+    pass('company_filter matches on token boundaries (no substring over-match)');
+  } else {
+    fail('company_filter should match "Alignerr" but not "Alignerrific Solutions"');
+  }
+
+  // Multi-word blocked name matches only as an ordered run.
+  if (seeded('Crossing Hurdles Ltd') === false && seeded('Hurdles Crossing Agency') === true) {
+    pass('multi-word blocked name matches only as an ordered token run');
+  } else {
+    fail('"Crossing Hurdles" should match "Crossing Hurdles Ltd" but not "Hurdles Crossing Agency"');
+  }
+} catch (e) {
+  fail(`company filter tests crashed: ${e.message}`);
+}
+
 // ── SUMMARY ─────────────────────────────────────────────────────
 
 console.log('\n' + '='.repeat(50));
