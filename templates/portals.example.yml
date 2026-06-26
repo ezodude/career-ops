@@ -1295,6 +1295,39 @@ job_boards:
   #   contract: true                 # Reed contract filter + tags offers contractType:'contract'
   #   resultsToTake: 100             # Reed page cap (optional, default 100)
 
+  # ── Adzuna (UK contract discovery — CP-2) ──────────────────────────
+  # Free UK aggregator. Requires ADZUNA_APP_ID + ADZUNA_APP_KEY in .env
+  # (free: https://developer.adzuna.com). Without them this source is
+  # skipped cleanly. Keyword precision is CP-9; remote/contract
+  # post-filtering is CP-3 — this entry only fetches and tags supply.
+  # - name: Adzuna (UK AI contract)
+  #   provider: adzuna
+  #   enabled: true
+  #   keywords: '"AI Engineer" OR "LLM" OR "agentic" OR "machine learning"'
+  #   locationName: London          # any UK town/city/postcode
+  #   distanceFromLocation: 30       # km from locationName (Adzuna uses km)
+  #   contract: true                 # Adzuna contract filter + tags contractType
+  #   resultsToTake: 50              # Adzuna page cap (optional, default 50)
+  #   country: gb                    # optional, default gb
+
+  # ── Apify LinkedIn Jobs (CP-2) — PAID, DISABLED BY DEFAULT ──────────
+  # Scrapes LinkedIn Jobs on Apify's infrastructure (no browser, no LinkedIn
+  # login here). Requires APIFY_TOKEN in .env. Cost ~$1.50/1,000 saved jobs.
+  # Runs ONLY when enabled: true — leave it false/absent to never spend.
+  # `input` is passed to the actor verbatim; cap volume with the actor's own
+  # rows/count field (here `rows`) and optionally `maxItems`. See docs/SCRIPTS.md.
+  # - name: Apify LinkedIn (UK AI contract)
+  #   provider: apify
+  #   enabled: false                 # set true to run — PAID
+  #   actor: chronometrica/linkedin-jobs-scraper
+  #   maxItems: 50                   # secondary cap on returned items
+  #   input:
+  #     title: "AI Engineer"
+  #     location: "United Kingdom"
+  #     contractType: "Contract"
+  #     workType: "Remote"
+  #     rows: 50                     # actor-specific volume cap (controls spend)
+
   # ── SolidJobs (Polish market) ──────────────────────────────────────
   # Public API — no auth needed. Division in URL path, campaign=career-ops for tracking.
   # Available divisions: it, engineering, marketing, sales, hr, logistics, finances, other

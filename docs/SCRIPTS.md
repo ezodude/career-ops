@@ -252,6 +252,21 @@ npm run scan
 
 **Exit codes:** `0` scan completed, `1` configuration error or no portals.yml found.
 
+### Apify (LinkedIn Jobs) — cost behaviour
+
+The `apify` provider (CP-2) scrapes LinkedIn Jobs through Apify's
+`run-sync-get-dataset-items` REST API. The scrape runs on Apify's servers — no
+browser and no LinkedIn credentials on our side — and returns JSON.
+
+- **Paid.** ~$1.50 per 1,000 saved jobs (Apify usage, not Claude tokens).
+- **Disabled by default.** The source runs only when its `job_boards` entry sets
+  `enabled: true`. Omitted or `false` → the provider returns nothing and spends $0.
+- **Capping volume.** The entry's `input:` object is sent to the actor verbatim;
+  cap spend with the actor's own volume field (e.g. `rows`/`count`). `maxItems` on
+  the entry is a secondary trim of items returned to the scanner.
+- **Auth.** `APIFY_TOKEN` in `.env`. Missing token on an enabled entry → the source
+  is skipped with a clear message; the rest of the scan runs.
+
 ---
 
 ## scan:full
