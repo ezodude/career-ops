@@ -25,12 +25,12 @@ This ticket fixes the matching engine **and** adds company exclusion. Both are c
 
 ## Definition of Done
 
-- [ ] Keyword matcher uses word/token boundaries; documented noise titles (`Site Agent`, `maintain`, etc.) no longer match.
-- [ ] Multi-word phrases match only as ordered token runs.
-- [ ] Negative list in `portals.yml` extended with spike noise; matcher honours it.
-- [ ] Regression fixtures from the spike output added and asserted in `test-all.mjs`.
-- [ ] Positives, phrases, and negatives all read from `portals.yml`, not hardcoded.
-- [ ] Existing ATS scan behaviour unchanged for titles that legitimately matched before.
-- [ ] Company-exclusion filter drops jobs whose `job.company` matches a `portals.yml` blocklist (mechanism in `scan.mjs`, blocklist in the user layer); seeded with `Alignerr`, `Crossing Hurdles`, `Great Value Hiring`.
-- [ ] Company blocklist matches on token boundaries (no over-matching legitimate employers); regression fixtures from the Apify gig-mill output asserted in `test-all.mjs`.
-- [ ] `test-all.mjs` passes.
+- [x] Keyword matcher uses word/token boundaries; documented noise titles (`Site Agent`, `maintain`, etc.) no longer match.
+- [x] Multi-word phrases match only as ordered token runs.
+- [x] Negative list in `portals.yml` extended with spike noise; matcher honours it.
+- [x] Regression fixtures from the spike output added and asserted in `test-all.mjs`.
+- [x] Positives, phrases, and negatives all read from `portals.yml`, not hardcoded.
+- [x] Existing ATS scan behaviour unchanged for titles that legitimately matched before.
+- [x] Company-exclusion filter drops jobs whose `job.company` matches a `portals.yml` blocklist (mechanism in `scan.mjs`, blocklist in the user layer); seeded with `Alignerr`, `Crossing Hurdles`, `Great Value Hiring`.
+- [x] Company blocklist matches on token boundaries (no over-matching legitimate employers); regression fixtures from the Apify gig-mill output asserted in `test-all.mjs`.
+- [x] `test-all.mjs` passes.
