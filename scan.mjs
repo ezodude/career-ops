@@ -30,6 +30,7 @@
  *   node scan.mjs --verify --throttle=8000     # custom base gap in ms (waits base..2*base)
  */
 
+import 'dotenv/config';
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
