@@ -2,6 +2,7 @@
 // @ts-check
 // Run: node test-apify-adapter.mjs
 import { normalizeActor, buildRunUrl, mapApifyJob } from './providers/apify.mjs';
+import { readFileSync } from 'node:fs';
 
 let passed = 0, failed = 0;
 function assert(cond, name) {
@@ -131,6 +132,22 @@ section('fetch — enabled');
   catch { threw = true; }
   assert(threw, 'throws when actor missing');
   delete process.env.APIFY_TOKEN;
+}
+
+// Locked regression against REAL actor output captured 2026-06-26 — guards the
+// locationRaw/salaryRaw mapping quirks against a live sample, and keeps the
+// fixture exercised so it can't silently bit-rot before CP-9 consumes it.
+section('fixture regression — real chronometrica actor output');
+{
+  const items = JSON.parse(readFileSync(new URL('./fixtures/apify-linkedin-jobs-sample.json', import.meta.url), 'utf8'));
+  assert(Array.isArray(items) && items.length === 5, 'fixture is a 5-item array');
+  const jobs = items.map(raw => mapApifyJob(raw, { name: 'Apify LinkedIn', contract: true }));
+  assert(jobs.every(j => j.title && /^https?:\/\//i.test(j.url)), 'all 5 map to a title + http url');
+  assert(jobs.every(j => j.location && j.location.trim()), 'every job has non-empty location (locationRaw/locationCity)');
+  const ml = jobs.find(j => j.compRaw === '$85/hr');
+  assert(ml && ml.salary && ml.salary.min === 85 && ml.salary.max === 85, 'the $85/hr row yields structured salary {85,85}');
+  assert(jobs.every(j => j.contractType === 'contract'), 'all tagged contract from entry.contract');
+  assert(jobs.some(j => /great value hiring|crossing hurdles/i.test(j.company)), 'contains known gig-mill companies (seeds CP-9 exclusion)');
 }
 
 console.log(`\n${'─'.repeat(40)}\nApify adapter: ${passed} passed, ${failed} failed`);
