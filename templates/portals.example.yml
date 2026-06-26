@@ -1314,19 +1314,21 @@ job_boards:
   # Scrapes LinkedIn Jobs on Apify's infrastructure (no browser, no LinkedIn
   # login here). Requires APIFY_TOKEN in .env. Cost ~$1.50/1,000 saved jobs.
   # Runs ONLY when enabled: true — leave it false/absent to never spend.
-  # `input` is passed to the actor verbatim; cap volume with the actor's own
-  # rows/count field (here `rows`) and optionally `maxItems`. See docs/SCRIPTS.md.
+  # `input` is passed to the actor VERBATIM — field names are actor-specific.
+  # The fields below match chronometrica/linkedin-jobs-scraper; a different
+  # actor uses different names. `maxItems` caps volume (and spend). See docs/SCRIPTS.md.
   # - name: Apify LinkedIn (UK AI contract)
   #   provider: apify
   #   enabled: false                 # set true to run — PAID
   #   actor: chronometrica/linkedin-jobs-scraper
-  #   maxItems: 50                   # secondary cap on returned items
+  #   maxItems: 50                   # entry-level cap on items returned to the scanner
   #   input:
-  #     title: "AI Engineer"
+  #     searchTerm: "AI Engineer"    # keywords (this actor's field; NOT "title")
   #     location: "United Kingdom"
-  #     contractType: "Contract"
-  #     workType: "Remote"
-  #     rows: 50                     # actor-specific volume cap (controls spend)
+  #     jobType: "contract"          # enum: any|fulltime|parttime|contract|temporary|internship|volunteer
+  #     workplaceType: "remote"      # enum: any|onsite|remote|hybrid
+  #     postedWithin: "7d"           # enum: any|24h|3d|7d|14d|30d
+  #     maxItems: 50                 # actor volume cap — controls spend
 
   # ── SolidJobs (Polish market) ──────────────────────────────────────
   # Public API — no auth needed. Division in URL path, campaign=career-ops for tracking.

@@ -56,6 +56,35 @@ section('mapApifyJob');
   assert(job.contractType === 'contract', 'derives contract from entry.contract');
   assert(job.postedAt === 1750000000000, 'accepts epoch ms postedAt');
 }
+// Real output shape of the documented actor chronometrica/linkedin-jobs-scraper:
+// location lives in `locationRaw`/`locationCity` (not `location`), and comp in
+// `salaryRaw` + structured `salaryMin`/`salaryMax`/`salaryCurrency`. Verified
+// against a live 5-item run on 2026-06-26.
+{
+  const raw = {
+    title: 'ML Engineer', companyName: 'Great Value Hiring',
+    locationRaw: 'United Kingdom', locationCity: 'United Kingdom',
+    jobUrl: 'https://uk.linkedin.com/jobs/view/ml-engineer-123',
+    descriptionText: 'ML Engineer (Coding Agent Experience)…',
+    workplaceType: 'remote', employmentType: 'contract',
+    salaryRaw: '$85/hr', salaryMin: 85, salaryMax: 85, salaryCurrency: null, salaryPeriod: 'hour',
+    postedAt: '2026-06-20T13:51:00.102Z',
+  };
+  const job = mapApifyJob(raw, { name: 'Apify LinkedIn', contract: true });
+  assert(job.location === 'United Kingdom', 'reads location from locationRaw');
+  assert(job.description === 'ML Engineer (Coding Agent Experience)…', 'reads description from descriptionText');
+  assert(job.compRaw === '$85/hr', 'reads compRaw from salaryRaw');
+  assert(job.salary && job.salary.min === 85 && job.salary.max === 85, 'builds structured salary from salaryMin/Max');
+  assert(job.salary.currency === undefined, 'omits currency when source currency is null');
+  assert(job.remoteType === 'remote', 'maps workplaceType remote');
+  assert(job.contractType === 'contract', 'maps employmentType contract');
+}
+{
+  // locationCity-only fallback (no locationRaw)
+  const raw = { title: 'X', jobUrl: 'https://l/1', companyName: 'Co', locationCity: 'London' };
+  const job = mapApifyJob(raw, { name: 'Apify' });
+  assert(job.location === 'London', 'falls back to locationCity when no locationRaw/location');
+}
 
 section('fetch — disabled-by-default gate');
 {

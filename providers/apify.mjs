@@ -47,11 +47,14 @@ function normalizeRemote(v) {
 /** @param {Record<string, any>} raw @param {Record<string, any>} entry @returns {import('./_types.js').Job} */
 export function mapApifyJob(raw, entry) {
   const url = [raw.jobUrl, raw.link, raw.url].find(u => typeof u === 'string' && u.trim()) || '';
+  // Location field name varies by actor: generic `location`, or the
+  // chronometrica/linkedin-jobs-scraper `locationRaw`/`locationCity`.
+  const location = [raw.location, raw.locationRaw, raw.locationCity].find(l => typeof l === 'string' && l.trim()) || '';
   const job = {
     title: typeof raw.title === 'string' ? raw.title.trim() : '',
     url: typeof url === 'string' ? url.trim() : '',
     company: [raw.companyName, raw.company].find(c => typeof c === 'string' && c.trim()) || (entry.name || 'Apify'),
-    location: typeof raw.location === 'string' ? raw.location.trim() : '',
+    location: typeof location === 'string' ? location.trim() : '',
   };
   const desc = [raw.description, raw.descriptionText].find(d => typeof d === 'string' && d.trim());
   if (desc) job.description = desc.trim();
@@ -59,7 +62,13 @@ export function mapApifyJob(raw, entry) {
   if (remoteType) job.remoteType = remoteType;
   const isContract = entry.contract === true || (typeof raw.employmentType === 'string' && /contract/i.test(raw.employmentType));
   if (isContract) job.contractType = 'contract';
-  const comp = [raw.salary, raw.salaryInfo].find(s => typeof s === 'string' && s.trim());
+  // Structured comp when the actor exposes it (chronometrica: salaryMin/Max/Currency).
+  const sMin = Number.isFinite(raw.salaryMin) ? raw.salaryMin : undefined;
+  const sMax = Number.isFinite(raw.salaryMax) ? raw.salaryMax : undefined;
+  const sCur = (typeof raw.salaryCurrency === 'string' && raw.salaryCurrency.trim()) ? raw.salaryCurrency.trim() : undefined;
+  if (sMin != null || sMax != null) job.salary = { min: sMin, max: sMax, currency: sCur };
+  // Human-readable comp string: prefer the actor's raw field (salaryRaw on chronometrica).
+  const comp = [raw.salaryRaw, raw.salary, raw.salaryInfo].find(s => typeof s === 'string' && s.trim());
   if (comp) job.compRaw = comp.trim();
   const postedAt = toEpochMs(raw.postedAt ?? raw.publishedAt);
   if (postedAt != null) job.postedAt = postedAt;
