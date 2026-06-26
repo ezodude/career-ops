@@ -122,16 +122,23 @@ function resolveProvider(entry, providers, { skipIds = [] } = {}) {
 
 // ── Title filter ────────────────────────────────────────────────────
 
-// Compile a lowercased keyword into a matcher. Short all-letter acronyms
-// (2-3 chars: cfo, coo, sdr, bdr, gsi…) match on WORD BOUNDARIES so "COO" no
-// longer matches "Coordinator", "SDR" no longer matches anything mid-word, etc.
-// Multi-word phrases and keywords containing non-letters (".NET", "SAP ",
-// "L&D") keep fast, permissive substring matching.
+// Compile a lowercased keyword into a matcher. Keywords that are LETTERS AND
+// SPACES ONLY ("ai", "agent", "generative ai") match on WORD/TOKEN BOUNDARIES,
+// so "agent" no longer matches "management" and a phrase matches only as an
+// ordered token run. Keywords containing non-letters (".NET", "SAP ", "L&D",
+// "Low-Code", non-ASCII) keep fast, permissive substring matching.
 export function compileKeyword(kw) {
-  if (/^[a-z]{2,3}$/.test(kw)) {
-    const re = new RegExp(`\\b${kw}\\b`);
+  // Letters-and-spaces only (single token OR multi-word phrase) → match on word
+  // boundaries. "agent" no longer hits "management"; "generative ai" matches
+  // only as an ordered token run, not loose/reordered tokens. Tokens join on
+  // \s+ so any whitespace run in the target counts as one separator.
+  if (/^[a-z]+( [a-z]+)*$/.test(kw)) {
+    const re = new RegExp(`\\b${kw.split(' ').join('\\s+')}\\b`);
     return (lower) => re.test(lower);
   }
+  // Anything with digits, punctuation, hyphens, ampersands, a trailing space, or
+  // non-ASCII (".NET", "Java ", "Low-Code", "Web3", "Künstliche Intelligenz")
+  // keeps permissive substring matching.
   return (lower) => lower.includes(kw);
 }
 

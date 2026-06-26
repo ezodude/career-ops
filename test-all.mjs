@@ -1637,6 +1637,50 @@ try {
   } else {
     fail('buildTitleFilter should ignore non-string/empty keyword entries');
   }
+
+  // CP-9: longer single-word positives match on word boundaries too.
+  const agentFilter = buildTitleFilter({ positive: ['agent'] });
+  // "agent" (word boundary) matches the standalone token "Agent" but NOT
+  // "Agentic" (a different word that merely starts with the same letters).
+  if (agentFilter('Senior AI Agent') === true && agentFilter('Agentic Engineer') === false) {
+    pass('"agent" positive matches standalone "Agent" but NOT "Agentic" (word boundary)');
+  } else {
+    fail('"agent" should match standalone "Agent" but not "Agentic"');
+  }
+  if (agentFilter('Engagement Management Lead') === false) {
+    pass('"agent" positive does NOT match "Management" (no mid-word match)');
+  } else {
+    fail('"agent" must not match "Management"');
+  }
+
+  // CP-9: multi-word positives match only as an ordered token run.
+  const phraseRun = buildTitleFilter({ positive: ['generative ai'] });
+  if (phraseRun('Generative AI Engineer') === true) {
+    pass('"generative ai" phrase matches a contiguous token run');
+  } else {
+    fail('"generative ai" should match "Generative AI Engineer"');
+  }
+  if (phraseRun('AI for Generative Design') === false) {
+    pass('"generative ai" phrase does NOT match loose/reordered tokens');
+  } else {
+    fail('"generative ai" must not match "AI for Generative Design"');
+  }
+
+  // CP-9: keywords with non-letter chars keep permissive substring matching.
+  const escapeHatch = buildTitleFilter({ positive: ['.net', 'java '] });
+  if (escapeHatch('Senior .NET Developer') === true && escapeHatch('Java Backend Engineer') === true) {
+    pass('non-letter keywords (".NET", "Java ") keep substring matching');
+  } else {
+    fail('".NET"/"Java " should still substring-match');
+  }
+
+  // CP-9: extended negative list drops a Reed-spike noise title.
+  const reedNoise = buildTitleFilter({ positive: ['agent'], negative: ['site agent'] });
+  if (reedNoise('Site Agent') === false && reedNoise('AI Agent') === true) {
+    pass('negative "site agent" drops the Reed-spike noise title, keeps "AI Agent"');
+  } else {
+    fail('negative "site agent" should drop "Site Agent" but keep "AI Agent"');
+  }
 } catch (e) {
   fail(`title filter acronym tests crashed: ${e.message}`);
 }
