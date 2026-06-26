@@ -444,8 +444,10 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - [ ] **Step 4: Merge to main and push**
 
 ```bash
-git -C /Users/rad/Projects/career-ops merge --ff-only worktree-cp-9-keyword-matching-precision
-git -C /Users/rad/Projects/career-ops push origin main
+# MAIN points at the main checkout (the worktree's shared root), path-agnostic:
+MAIN="$(git rev-parse --git-common-dir)/.."
+git -C "$MAIN" merge --ff-only worktree-cp-9-keyword-matching-precision
+git -C "$MAIN" push origin main
 ```
 Expected: fast-forward merge; push to `origin` (ezodude/career-ops) only — NEVER
 upstream.
