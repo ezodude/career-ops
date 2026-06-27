@@ -24,21 +24,25 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 
 ## Tickets
 
-| ID | Title | Phase | Depends on | Effort |
-|----|-------|-------|------------|--------|
-| [CP-1](CP-1-discovery-adapter-framework.md) | Discovery adapter framework + Reed source | 1 | — | M |
-| [CP-2](CP-2-adzuna-apify-adapters.md) | Adzuna + Apify LinkedIn Jobs adapters | 1 | CP-1 | M |
-| [CP-9](CP-9-keyword-matching-precision.md) | Keyword matching precision | 1 | CP-1 | S |
-| [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1, CP-9 | S |
-| [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M |
-| [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L |
-| [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M |
-| [CP-7](CP-7-evaluation-scoring-upgrade.md) | Evaluation scoring upgrade (contract-fit + path-in) | 1 | CP-3 | M |
-| [CP-8](CP-8-network-first-discovery.md) | Network-first discovery (future) | 2 | CP-4 | L |
+| ID | Title | Phase | Depends on | Effort | Status |
+|----|-------|-------|------------|--------|--------|
+| [CP-1](CP-1-discovery-adapter-framework.md) | Discovery adapter framework + Reed source | 1 | — | M | ✅ Built |
+| [CP-2](CP-2-adzuna-apify-adapters.md) | Adzuna + Apify LinkedIn Jobs adapters | 1 | CP-1 | M | ✅ Built |
+| [CP-9](CP-9-keyword-matching-precision.md) | Keyword matching precision | 1 | CP-1 | S | ✅ Built |
+| [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1, CP-9 | S | ▶ Next |
+| [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M | Proposed |
+| [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L | Proposed |
+| [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M | Proposed |
+| [CP-7](CP-7-evaluation-scoring-upgrade.md) | Evaluation scoring upgrade (contract-fit + path-in) | 1 | CP-3 | M | Proposed |
+| [CP-8](CP-8-network-first-discovery.md) | Network-first discovery (future) | 2 | CP-4 | L | Phase 2 |
+
+## Progress
+
+**As of 2026-06-27 (`origin/main` @ `e2170e4`):** CP-1, CP-2, and CP-9 are built and pushed. New contract supply (Reed, Adzuna, Apify LinkedIn Jobs) now flows through a precise, boundary-aware title matcher plus a gig-mill company blocklist. **CP-3 is next** — the contract/location filter stage that gates this supply down to in-scope (contract, UK/remote) roles.
 
 ## Build order
 
-1. CP-1 then CP-2, then CP-9 then CP-3. New contract supply, matched precisely and filtered.
+1. ✅ CP-1 → ✅ CP-2 → ✅ CP-9 → **▶ CP-3 (next)**. New contract supply, matched precisely and filtered.
 2. CP-4. Free warm flagging on the new supply.
 3. CP-5 then CP-6. Manage the contract pipeline.
 4. CP-7. Sharpen ranking.

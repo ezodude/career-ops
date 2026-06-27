@@ -1,6 +1,6 @@
 # CP-9: Keyword matching precision
 
-**Status:** Proposed · **Phase:** 1 · **Depends on:** CP-1 · **Effort:** S
+**Status:** Built · **Phase:** 1 · **Depends on:** CP-1 · **Effort:** S
 
 ## Overview
 
