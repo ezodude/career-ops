@@ -852,6 +852,7 @@ async function main() {
   const boards = Array.isArray(config.job_boards) ? config.job_boards : [];
   const titleFilter = buildTitleFilter(config.title_filter);
   const companyFilter = buildCompanyFilter(config.company_filter);
+  const contractFilter = buildContractFilter(config.contract_filter);
   const locationFilter = buildLocationFilter(config.location_filter);
   const salaryFilter = buildSalaryFilter(config.salary_filter);
   const contentFilter = buildContentFilter(config.content_filter);
@@ -925,6 +926,7 @@ async function main() {
   let totalFound = 0;
   let totalFilteredTitle = 0;
   let totalFilteredCompany = 0;
+  let totalFilteredContract = 0;
   let totalFilteredLocation = 0;
   let totalFilteredSalary = 0;
   let totalFilteredContent = 0;
@@ -964,6 +966,10 @@ async function main() {
         }
         if (!companyFilter(job.company)) {
           totalFilteredCompany++;
+          continue;
+        }
+        if (!contractFilter(job)) {
+          totalFilteredContract++;
           continue;
         }
         if (!locationFilter(job.location)) {
@@ -1074,6 +1080,7 @@ async function main() {
   console.log(`Total jobs found:      ${totalFound}`);
   console.log(`Filtered by title:     ${totalFilteredTitle} removed`);
   console.log(`Filtered by company:   ${totalFilteredCompany} removed`);
+  console.log(`Filtered by contract:  ${totalFilteredContract} removed`);
   console.log(`Filtered by location:  ${totalFilteredLocation} removed`);
   console.log(`Filtered by salary:   ${totalFilteredSalary} removed`);
   console.log(`Filtered by content:  ${totalFilteredContent} removed`);
