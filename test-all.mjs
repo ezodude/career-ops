@@ -4655,6 +4655,44 @@ try {
   } else {
     fail('contract_filter should keep the Apify contract rows');
   }
+
+  const { buildOfferTags, formatPipelineOffer, buildLocationFilter } =
+    await import(pathToFileURL(join(ROOT, 'scan.mjs')).href);
+
+  // Full tag row: contract + remote + source.
+  if (buildOfferTags({ contractType: 'contract', remoteType: 'remote', source: 'reed-api' }) === '[contract] [remote] [Reed]') {
+    pass('buildOfferTags renders [contract] [remote] [Reed]');
+  } else {
+    fail(`buildOfferTags full row wrong: ${buildOfferTags({ contractType: 'contract', remoteType: 'remote', source: 'reed-api' })}`);
+  }
+
+  // Unknown → [contract?]; UK location fallback; -api stripped + title-cased.
+  if (buildOfferTags({ title: 'Engineer', location: 'London, UK', source: 'greenhouse-api' }) === '[contract?] [UK] [Greenhouse]' &&
+      buildOfferTags({ contractType: 'temp', source: 'adzuna-api' }) === '[temp] [Adzuna]') {
+    pass('buildOfferTags flags unknown as [contract?], falls back to [UK], strips -api source');
+  } else {
+    fail(`buildOfferTags unknown/UK/source wrong: ${buildOfferTags({ title: 'Engineer', location: 'London, UK', source: 'greenhouse-api' })}`);
+  }
+
+  // formatPipelineOffer appends tags as bracketed tokens — adds NO pipes, so the
+  // row stays exactly 3 pipe-separated fields (the hostile-offer invariant).
+  const tagRow = formatPipelineOffer({ url: 'https://x.co/1', company: 'Acme', title: 'AI Engineer', contractType: 'contract', remoteType: 'remote', source: 'reed-api' });
+  if (tagRow === '- [ ] https://x.co/1 | Acme | AI Engineer  [contract] [remote] [Reed]' && tagRow.split('|').length === 3) {
+    pass('formatPipelineOffer appends tags without adding pipes');
+  } else {
+    fail(`formatPipelineOffer tag row wrong: ${tagRow}`);
+  }
+
+  // location_filter (now activatable by config): US-onsite dropped, UK/remote/EU pass.
+  const loc = buildLocationFilter({ allow: ['united kingdom', 'london', 'remote', 'emea', 'europe'] });
+  if (loc('New York, United States') === false &&
+      loc('London, United Kingdom') === true &&
+      loc('Remote') === true &&
+      loc('Berlin, Europe') === true) {
+    pass('activated location_filter drops US-onsite, passes UK/remote/EU');
+  } else {
+    fail('location_filter allow-list did not gate US vs UK/remote correctly');
+  }
 } catch (e) {
   fail(`contract filter / tags tests crashed: ${e.message}`);
 }

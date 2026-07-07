@@ -554,11 +554,39 @@ export function sanitizeTsvField(value) {
   return /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
 }
 
+// Visible triage tags for a pipeline.md row: a contract tag
+// ([contract]/[temp]/[permanent]/[contract?]), an optional location tag, and an
+// optional source tag. Tags are LITERAL bracketed tokens (never interpolated
+// from raw offer text), so they add no pipes, newlines, or tabs and cannot
+// corrupt the row shape. resolveContractType always returns a valid key, so the
+// contract tag (at minimum [contract?]) is always present.
+const CONTRACT_TAG = { contract: '[contract]', temp: '[temp]', permanent: '[permanent]', unknown: '[contract?]' };
+const REMOTE_TAG = { remote: '[remote]', hybrid: '[hybrid]', onsite: '[onsite]' };
+
+export function buildOfferTags(offer) {
+  const tags = [CONTRACT_TAG[resolveContractType(offer)]];
+
+  const remote = typeof offer?.remoteType === 'string' ? offer.remoteType.toLowerCase().trim() : '';
+  if (REMOTE_TAG[remote]) {
+    tags.push(REMOTE_TAG[remote]);
+  } else {
+    const locLower = (offer?.location || '').toLowerCase();
+    if (/\bremote\b/.test(locLower)) tags.push('[remote]');
+    else if (/\b(uk|united kingdom|london|england|scotland|wales)\b/.test(locLower)) tags.push('[UK]');
+  }
+
+  const src = (offer?.source || '').replace(/-api$/, '').trim();
+  if (src) tags.push(`[${src.charAt(0).toUpperCase()}${src.slice(1)}]`);
+
+  return tags.join(' ');
+}
+
 export function formatPipelineOffer(offer) {
   const url = sanitizePipelineUrl(offer.url);
   const company = sanitizeMarkdownField(offer.company);
   const title = sanitizeMarkdownField(offer.title);
-  return `- [ ] ${url} | ${company} | ${title}`;
+  const tags = buildOfferTags(offer);
+  return `- [ ] ${url} | ${company} | ${title}${tags ? `  ${tags}` : ''}`;
 }
 
 export function formatScanHistoryRow(offer, date, status = 'added') {
