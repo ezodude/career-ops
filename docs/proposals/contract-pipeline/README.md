@@ -29,8 +29,8 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 | [CP-1](CP-1-discovery-adapter-framework.md) | Discovery adapter framework + Reed source | 1 | — | M | ✅ Built |
 | [CP-2](CP-2-adzuna-apify-adapters.md) | Adzuna + Apify LinkedIn Jobs adapters | 1 | CP-1 | M | ✅ Built |
 | [CP-9](CP-9-keyword-matching-precision.md) | Keyword matching precision | 1 | CP-1 | S | ✅ Built |
-| [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1, CP-9 | S | ▶ Next |
-| [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M | Proposed |
+| [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1, CP-9 | S | ✅ Built |
+| [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M | ▶ Next |
 | [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L | Proposed |
 | [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M | Proposed |
 | [CP-7](CP-7-evaluation-scoring-upgrade.md) | Evaluation scoring upgrade (contract-fit + path-in) | 1 | CP-3 | M | Proposed |
@@ -38,12 +38,12 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 
 ## Progress
 
-**As of 2026-06-27 (`origin/main` @ `e2170e4`):** CP-1, CP-2, and CP-9 are built and pushed. New contract supply (Reed, Adzuna, Apify LinkedIn Jobs) now flows through a precise, boundary-aware title matcher plus a gig-mill company blocklist. **CP-3 is next** — the contract/location filter stage that gates this supply down to in-scope (contract, UK/remote) roles.
+**As of 2026-07-07:** CP-1, CP-2, CP-9, and CP-3 are built and pushed. New contract supply (Reed, Adzuna, Apify LinkedIn Jobs) flows through a precise, boundary-aware title matcher plus a gig-mill company blocklist, and is now gated by the CP-3 contract + location filter stage: a config-driven `contract_filter.drop` (permanent) that never silently drops unknowns, the activated `location_filter` (UK/remote/EU), and `[contract] [remote] [Reed]`-style triage tags on `pipeline.md` rows. **CP-4 is next** — free warm-intro reachability scoring on this supply.
 
 ## Build order
 
-1. ✅ CP-1 → ✅ CP-2 → ✅ CP-9 → **▶ CP-3 (next)**. New contract supply, matched precisely and filtered.
-2. CP-4. Free warm flagging on the new supply.
+1. ✅ CP-1 → ✅ CP-2 → ✅ CP-9 → ✅ CP-3. New contract supply, matched precisely and filtered.
+2. **▶ CP-4 (next).** Free warm flagging on the new supply.
 3. CP-5 then CP-6. Manage the contract pipeline.
 4. CP-7. Sharpen ranking.
 

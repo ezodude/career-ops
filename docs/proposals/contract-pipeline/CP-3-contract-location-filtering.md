@@ -1,6 +1,6 @@
 # CP-3: Contract + location filtering
 
-**Status:** Proposed · **Phase:** 1 · **Depends on:** CP-1, CP-9 · **Effort:** S
+**Status:** ✅ Built · **Phase:** 1 · **Depends on:** CP-1, CP-9 · **Effort:** S
 
 ## Overview
 
@@ -10,17 +10,17 @@ This ticket adds a post-fetch filter stage so only contract roles in scope (UK o
 
 ## Technical notes
 
-- Add a `targeting:` block to `portals.yml` (user layer): `contract_filter` and `location_filter` rules. Values mirror the user profile (contract, UK, remote, remote-EU).
-- **Contract filter.** Keep `contract` and `temp`. Drop `permanent`. Reed and Apify give employment type directly. For ATS boards that omit it, detect contract signals in title and description. If still unknown, set `contract_type: unknown` and keep the role for human triage. Do not silently drop unknowns.
-- **Location filter.** Keep UK and remote (plus remote-EU per profile). Match the structured `remote_type` and `location` fields first, then fall back to keywords (`remote`, `United Kingdom`, `London`, `EMEA`).
+- Add two **flat sibling blocks** to `portals.yml` (user layer): `contract_filter` and `location_filter`. (Originally proposed as a nested `targeting:` block — dropped in design: `scan.mjs` already has a tested `buildLocationFilter` wired to a top-level `location_filter`, and every other filter is a flat block; a wrapper would duplicate the location filter and break convention.) Values mirror the user profile (contract, UK, remote, remote-EU).
+- **Contract filter.** Drop is **config-driven** via `contract_filter.drop` (default `[permanent]`); anything not listed passes. Reed and Apify give employment type directly. For ATS boards that omit it, detect contract signals in title and description — but signals only ever resolve *toward* `contract`, never `permanent`, so inference can never cause a drop. If still unknown, keep the role and flag it `[contract?]` for human triage. Do not silently drop unknowns. (Dropping permanent is a one-line config reversal; salary-aware rescue of lucrative permanent roles is deferred to CP-7.)
+- **Location filter.** Reuse the existing, currently-dormant `buildLocationFilter` (activated purely by adding config — no mechanism change). Keep UK and remote (plus remote-EU per profile) via the tri-tier `always_allow` / `allow` / `block` lists.
 - Write visible tags into `pipeline.md` entries, for example `[contract] [remote] [Reed]`, so triage is legible at a glance.
-- Keyword precision (word boundaries, phrases, negatives) is delegated to CP-9. This ticket stays focused on contract and location fields.
+- Keyword precision (word boundaries, phrases, negatives) is delegated to CP-9 — this ticket only *reuses* `compileKeyword`. It stays focused on contract and location fields.
 - Zero-token. Pure string and field matching in `scan.mjs`.
 
 ## Definition of Done
 
-- [ ] `targeting:` block in `portals.yml` controls contract and location rules.
-- [ ] Permanent roles are dropped; contract and temp roles pass; unknown-type roles are kept and flagged.
+- [ ] `contract_filter` + `location_filter` flat blocks in `portals.yml` control contract and location rules.
+- [ ] Permanent roles are dropped (via the `contract_filter.drop` list); contract and temp roles pass; unknown-type roles are kept and flagged `[contract?]`.
 - [ ] Out-of-scope locations (for example US-onsite) are dropped; UK and remote pass.
 - [ ] `pipeline.md` entries carry contract, location, and source tags.
 - [ ] Scan summary reports counts removed by contract filter and by location filter.
