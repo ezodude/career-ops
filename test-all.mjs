@@ -4591,6 +4591,74 @@ try {
   fail(`company filter tests crashed: ${e.message}`);
 }
 
+// ── 29. CONTRACT FILTER + OFFER TAGS (CP-3) ─────────────────────
+console.log('\n29. Contract filter + offer tags');
+try {
+  const { buildContractFilter, resolveContractType } =
+    await import(pathToFileURL(join(ROOT, 'scan.mjs')).href);
+
+  // resolveContractType: the structured field wins (case-insensitive).
+  if (resolveContractType({ contractType: 'permanent' }) === 'permanent' &&
+      resolveContractType({ contractType: 'Contract' }) === 'contract' &&
+      resolveContractType({ contractType: 'temp' }) === 'temp') {
+    pass('resolveContractType honours the structured contractType field');
+  } else {
+    fail('resolveContractType should honour the structured field');
+  }
+
+  // Inference: a title/desc signal resolves to contract; no signal → unknown;
+  // inference NEVER yields permanent (so it can never trigger a drop).
+  if (resolveContractType({ title: 'Contract Data Engineer (6 month)' }) === 'contract' &&
+      resolveContractType({ title: 'Senior AI Engineer', description: 'Day rate negotiable, outside IR35' }) === 'contract' &&
+      resolveContractType({ title: 'Senior Engineer' }) === 'unknown' &&
+      resolveContractType({ title: 'Senior Engineer (Permanent, Full-time)' }) === 'unknown') {
+    pass('resolveContractType infers contract from signals, never permanent, defaults to unknown');
+  } else {
+    fail('resolveContractType inference wrong');
+  }
+
+  // Absent config → all jobs pass.
+  const noFilter = buildContractFilter(null);
+  if (noFilter({ contractType: 'permanent' }) === true && noFilter({}) === true) {
+    pass('contract_filter absent → all jobs pass');
+  } else {
+    fail('contract_filter absent should pass all jobs');
+  }
+
+  // Empty drop list → pass-through.
+  if (buildContractFilter({ drop: [] })({ contractType: 'permanent' }) === true) {
+    pass('contract_filter with empty drop list passes all');
+  } else {
+    fail('empty drop list should pass all');
+  }
+
+  const cf = buildContractFilter({ drop: ['permanent'] });
+
+  // permanent dropped; contract/temp pass; unknown kept (incl. a permanent-LOOKING
+  // no-field title — proves inference never forces a drop).
+  if (cf({ contractType: 'permanent' }) === false &&
+      cf({ contractType: 'contract' }) === true &&
+      cf({ contractType: 'temp' }) === true &&
+      cf({ title: 'Senior Engineer' }) === true &&
+      cf({ title: 'Senior Engineer (Permanent, Full-time)' }) === true) {
+    pass('contract_filter drops permanent, passes contract/temp, keeps unknown');
+  } else {
+    fail('contract_filter drop/keep semantics wrong');
+  }
+
+  // Real Apify fixture rows (employmentType: contract) survive drop:[permanent].
+  const fixture = JSON.parse(readFileSync(join(ROOT, 'fixtures/apify-linkedin-jobs-sample.json'), 'utf-8'));
+  const { mapApifyJob } = await import(pathToFileURL(join(ROOT, 'providers/apify.mjs')).href);
+  const apifyJobs = fixture.map(raw => mapApifyJob(raw, { name: 'Apify' }));
+  if (apifyJobs.length > 0 && apifyJobs.every(j => cf(j) === true)) {
+    pass('contract_filter keeps all real Apify contract-type fixture rows');
+  } else {
+    fail('contract_filter should keep the Apify contract rows');
+  }
+} catch (e) {
+  fail(`contract filter / tags tests crashed: ${e.message}`);
+}
+
 // ── SUMMARY ─────────────────────────────────────────────────────
 
 console.log('\n' + '='.repeat(50));

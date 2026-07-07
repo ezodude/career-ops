@@ -256,6 +256,38 @@ export function buildCompanyFilter(companyFilter) {
   };
 }
 
+// ── Contract filter ─────────────────────────────────────────────────
+// Optional. If `contract_filter` is absent from portals.yml, all jobs pass.
+// Drops a job when its RESOLVED engagement type is in the user-layer `drop`
+// list (default intent: ["permanent"]). Type comes from the structured
+// `contractType` field first; when absent, a light title/description signal
+// check (reusing compileKeyword) can only ever resolve toward 'contract' —
+// never 'permanent' — so inference can never cause a drop. A role whose type
+// stays 'unknown' is never in the drop list and is always kept for triage.
+
+const CONTRACT_TYPES = new Set(['contract', 'permanent', 'temp']);
+
+// Letter/space signals ("contract", "fixed term", "day rate", "interim") match
+// on word boundaries via compileKeyword; entries with digits ("outside ir35",
+// "inside ir35") fall back to compileKeyword's permissive substring path.
+const CONTRACT_SIGNALS = ['contract', 'fixed term', 'day rate', 'interim', 'outside ir35', 'inside ir35']
+  .map(compileKeyword);
+
+export function resolveContractType(job) {
+  const declared = typeof job?.contractType === 'string' ? job.contractType.toLowerCase().trim() : '';
+  if (CONTRACT_TYPES.has(declared)) return declared;
+  const hay = `${job?.title || ''} ${job?.description || ''}`.toLowerCase();
+  if (hay.trim() && CONTRACT_SIGNALS.some(m => m(hay))) return 'contract';
+  return 'unknown';
+}
+
+export function buildContractFilter(contractFilter) {
+  if (!contractFilter) return () => true;
+  const drop = new Set(normalizeKeywordList(contractFilter.drop));
+  if (drop.size === 0) return () => true;
+  return (job) => !drop.has(resolveContractType(job));
+}
+
 // ── Salary filter ───────────────────────────────────────────────────
 // Optional. If `salary_filter` is absent from portals.yml, all salaries pass.
 // Semantics:
