@@ -40,6 +40,10 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 
 **As of 2026-07-07:** CP-1, CP-2, CP-9, and CP-3 are built and pushed. New contract supply (Reed, Adzuna, Apify LinkedIn Jobs) flows through a precise, boundary-aware title matcher plus a gig-mill company blocklist, and is now gated by the CP-3 contract + location filter stage: a config-driven `contract_filter.drop` (permanent) that never silently drops unknowns, the activated `location_filter` (UK/remote/EU), and `[contract] [remote] [Reed]`-style triage tags on `pipeline.md` rows. **CP-4 is next** — free warm-intro reachability scoring on this supply.
 
+## Reference
+
+- [`SCANNING-MODEL-AND-UAT.md`](SCANNING-MODEL-AND-UAT.md) — what a scan actually touches (source taxonomy), how CP-3 behaves per source type, the "no permanent-noise reduction on ATS boards" limitation (by design), and a repeatable cost-free UAT recipe with results.
+
 ## Build order
 
 1. ✅ CP-1 → ✅ CP-2 → ✅ CP-9 → ✅ CP-3. New contract supply, matched precisely and filtered.
