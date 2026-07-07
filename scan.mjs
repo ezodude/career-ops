@@ -556,10 +556,11 @@ export function sanitizeTsvField(value) {
 
 // Visible triage tags for a pipeline.md row: a contract tag
 // ([contract]/[temp]/[permanent]/[contract?]), an optional location tag, and an
-// optional source tag. Tags are LITERAL bracketed tokens (never interpolated
-// from raw offer text), so they add no pipes, newlines, or tabs and cannot
-// corrupt the row shape. resolveContractType always returns a valid key, so the
-// contract tag (at minimum [contract?]) is always present.
+// optional source tag. The contract/location tags are fixed literals; the only
+// interpolated value is the source slug, which is an adapter-set field (e.g.
+// "reed-api"), never scraped offer text — so no tag can carry a pipe, newline,
+// or tab that would corrupt the row shape. resolveContractType always returns a
+// valid key, so the contract tag (at minimum [contract?]) is always present.
 const CONTRACT_TAG = { contract: '[contract]', temp: '[temp]', permanent: '[permanent]', unknown: '[contract?]' };
 const REMOTE_TAG = { remote: '[remote]', hybrid: '[hybrid]', onsite: '[onsite]' };
 
