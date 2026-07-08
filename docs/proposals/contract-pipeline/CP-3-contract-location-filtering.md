@@ -19,9 +19,11 @@ This ticket adds a post-fetch filter stage so only contract roles in scope (UK o
 
 ## Definition of Done
 
-- [ ] `contract_filter` + `location_filter` flat blocks in `portals.yml` control contract and location rules.
-- [ ] Permanent roles are dropped (via the `contract_filter.drop` list); contract and temp roles pass; unknown-type roles are kept and flagged `[contract?]`.
-- [ ] Out-of-scope locations (for example US-onsite) are dropped; UK and remote pass.
-- [ ] `pipeline.md` entries carry contract, location, and source tags.
-- [ ] Scan summary reports counts removed by contract filter and by location filter.
-- [ ] `test-all.mjs` passes.
+- [x] `contract_filter` + `location_filter` flat blocks in `portals.yml` control contract and location rules.
+- [x] Permanent roles are dropped (via the `contract_filter.drop` list); contract and temp roles pass; unknown-type roles are kept and flagged `[contract?]`.
+- [x] Out-of-scope locations (for example US-onsite) are dropped; UK and remote pass.
+- [x] `pipeline.md` entries carry contract, location, and source tags.
+- [x] Scan summary reports counts removed by contract filter and by location filter.
+- [x] `test-all.mjs` passes.
+
+_Verified 2026-07-07 — unit suite `test-all.mjs` §29 + Layer 1 deterministic UAT (7/7) + Layer 2 cost-free full scan (location −685, 263 offers tagged). See [`SCANNING-MODEL-AND-UAT.md`](SCANNING-MODEL-AND-UAT.md)._
