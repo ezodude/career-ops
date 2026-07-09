@@ -116,23 +116,27 @@ const APIFY_RESULT_COST_PER_1K = 5; // $5 / 1,000 results (pay-per-result)
 /** Estimated USD for a full run: $5/1k × keywords × limit. @param {{keywords?:string[], limit?:number}} config @returns {number} */
 export function estimateCost(config) {
   const kw = Array.isArray(config?.keywords) ? config.keywords.length : 0;
-  const limit = Number.isFinite(config?.limit) ? config.limit : 30;
+  const limit = (typeof config?.limit === 'number' && Number.isFinite(config.limit)) ? config.limit : 30;
   return APIFY_RESULT_COST_PER_1K * (kw * limit) / 1000;
 }
 
 /** Load portals.yml and return the warm_signals config merged with the top-level location_filter. @param {string} portalsPath @returns {object} */
 function loadWarmConfig(portalsPath) {
-  const cfg = yaml.load(_read(portalsPath, 'utf-8')) || {};
+  const cfg = /** @type {any} */ (yaml.load(_read(portalsPath, 'utf-8')) || {});
   const warm = (cfg.warm_signals && typeof cfg.warm_signals === 'object') ? cfg.warm_signals : {};
   return { ...warm, location_filter: cfg.location_filter };
 }
 
+/**
+ * @param {string[]} argv
+ * @returns {Promise<void>}
+ */
 async function main(argv) {
   const spend = argv.includes('--spend');
   const portalsPath = process.env.CAREER_OPS_PORTALS || 'portals.yml';
   const config = loadWarmConfig(portalsPath);
   const keywords = Array.isArray(config.keywords) ? config.keywords : [];
-  const limit = Number.isFinite(config.limit) ? config.limit : 30;
+  const limit = (typeof config.limit === 'number' && Number.isFinite(config.limit)) ? config.limit : 30;
 
   if (!spend) {
     console.log('DRY PREVIEW — no spend. Pass --spend to run the PAID Apify search.');

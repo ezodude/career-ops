@@ -44,12 +44,6 @@ function reactionCount(r) {
   return undefined;
 }
 
-/**
- * Normalise one raw Apify posts-search item into a warm-post record.
- * `posterType` is left undefined here — the classify stage (warm-scan.mjs) sets it.
- * @param {Record<string, any>} raw
- * @returns {{poster:{name:string,headline:string,url:string,followers:(number|undefined)},posterType:undefined,text:string,dayRate:(string|undefined),ir35:('outside'|'inside'|undefined),location:string,url:string,postedAt:(number|undefined),reactions:(number|undefined)}}
- */
 const API_BASE = 'https://api.apify.com/v2/acts';
 
 /** Normalise `user/actor` → `user~actor`. @param {string} actor @returns {string} */
@@ -73,6 +67,12 @@ export async function fetchPosts(actor, keyword, { token, limit = 30, fetchJson,
   return Array.isArray(res) ? res : [];
 }
 
+/**
+ * Normalise one raw Apify posts-search item into a warm-post record.
+ * `posterType` is left undefined here — the classify stage (warm-scan.mjs) sets it.
+ * @param {Record<string, any>} raw
+ * @returns {{poster:{name:string,headline:string,url:string,followers:(number|undefined)},posterType:undefined,text:string,dayRate:(string|undefined),ir35:('outside'|'inside'|undefined),location:string,url:string,postedAt:(number|undefined),reactions:(number|undefined)}}
+ */
 export function mapApifyPost(raw) {
   if (!raw || typeof raw !== 'object') raw = {};
   const a = (raw && typeof raw.author === 'object' && raw.author) ? raw.author : {};
