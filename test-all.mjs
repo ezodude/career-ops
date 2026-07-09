@@ -4707,6 +4707,8 @@ console.log('\n30. Warm-signal discovery — CP-8');
 
   // Parsers
   parseDayRate('£600/day') === '£600/day' ? pass('parseDayRate basic') : fail('parseDayRate basic');
+  parseDayRate('£650 per day, outside IR35') === '£650/day' ? pass('parseDayRate "per day" → /day') : fail('parseDayRate "per day" normalisation');
+  parseDayRate('rate £550-650 per day remote') === '£550-650/day' ? pass('parseDayRate range "per day"') : fail('parseDayRate range "per day"');
   parseIr35('Outside IR35') === 'outside' ? pass('parseIr35 outside') : fail('parseIr35 outside');
 
   // Normaliser quirks

@@ -2,11 +2,13 @@
 // Apify LinkedIn *posts* normaliser — warm-signal discovery (CP-8). A post is a
 // poster + text, NOT a Job; this is a separate module from providers/apify.mjs.
 
-/** Parse a UK day rate like "£600/day" or "£450–500/day" from free text. @param {string} text @returns {string|undefined} */
+/** Parse a UK day rate from free text, always normalised to "£<amount>/day" (e.g. "£600 per day" → "£600/day", "£450–500/day" → "£450–500/day"). @param {string} text @returns {string|undefined} */
 export function parseDayRate(text) {
   if (typeof text !== 'string') return undefined;
-  const m = text.match(/£\s?\d[\d,]*(?:\s?[–-]\s?\d[\d,]*)?\s?(?:\/|per\s)\s?day/i);
-  return m ? m[0].replace(/\s+/g, '') : undefined;
+  const m = text.match(/£\s?(\d[\d,]*(?:\s?[–-]\s?£?\s?\d[\d,]*)?)\s?(?:\/|per\s?)\s?day/i);
+  if (!m) return undefined;
+  // Normalise the captured amount (strip stray whitespace) and re-attach a canonical "/day".
+  return `£${m[1].replace(/\s+/g, '')}/day`;
 }
 
 /** Detect IR35 status from free text. @param {string} text @returns {('outside'|'inside'|undefined)} */
