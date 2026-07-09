@@ -128,6 +128,19 @@ export async function validatePortalsConfig(config, { providerIds = new Set() } 
     }
   }
 
+  if (config.warm_signals !== undefined) {
+    const w = config.warm_signals;
+    if (!isObject(w)) {
+      add(errors, 'warm_signals', 'warm_signals must be an object');
+    } else {
+      if (w.actor !== undefined && typeof w.actor !== 'string') add(errors, 'warm_signals.actor', 'must be a string');
+      if (w.limit !== undefined && (typeof w.limit !== 'number' || !Number.isFinite(w.limit) || w.limit <= 0)) add(errors, 'warm_signals.limit', 'must be a positive number');
+      if (w.keywords !== undefined) validateKeywordList(w.keywords, 'warm_signals.keywords', errors);
+      if (w.aggregator_pages !== undefined) validateKeywordList(w.aggregator_pages, 'warm_signals.aggregator_pages', errors);
+      if (w.jobseeker_signals !== undefined) validateKeywordList(w.jobseeker_signals, 'warm_signals.jobseeker_signals', errors);
+    }
+  }
+
   if (config.content_filter !== undefined) {
     if (!isObject(config.content_filter)) {
       add(errors, 'content_filter', 'content_filter must be an object');
