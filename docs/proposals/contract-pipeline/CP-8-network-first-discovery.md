@@ -3,6 +3,8 @@
 **Status:** ▶ Pulled forward + reshaped (2026-07-09 pivot) · **Phase:** 1 · **Depends on:** CP-4 · **Effort:** L
 
 > **Pulled forward from Phase 2 by the [2026-07-09 strategic pivot](README.md#strategic-pivot--2026-07-09-board--warm)** and reshaped into **warm-signal discovery**: region-gated LinkedIn recruiter/dev *hiring posts* via Apify *content* search (validate with one cheap search before building the adapter), joined to CP-4 reachability scored on the *poster*, not just their company. This is the operator's actual high-yield channel. Needs its own brainstorm/spec before build.
+>
+> **✅ Validation done (2026-07-09) — GO.** A ~$0.72 spike (`apimaestro/linkedin-posts-search-scraper-no-cookies`, 5 searches) surfaced 49/144 in-scope UK/Remote AI-contract hiring posts; `AI engineer outside IR35` hit **83% precision**. Findings + adapter implications: [`CP-8-warm-signal-validation-findings.md`](CP-8-warm-signal-validation-findings.md). Adapter spec is the next step.
 
 ## Overview
 
