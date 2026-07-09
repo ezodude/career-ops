@@ -1,0 +1,37 @@
+[
+  {
+    "author": { "name": "Jane Recruiter", "headline": "Contract AI Talent @ TechAgency", "profile_url": "https://www.linkedin.com/in/jane-recruiter", "followers": 1200, "location": "London, United Kingdom" },
+    "text": "Hiring: Senior AI Engineer, 6 months, Outside IR35, £600/day, hybrid London.",
+    "url": "https://www.linkedin.com/posts/jane-recruiter_ai-hiring-activity-7200000000000000000-ab12?utm_source=share&utm_medium=member_desktop",
+    "posted_at": "2026-07-08T09:00:00.000Z",
+    "reactions": { "total": 34, "like": 30, "praise": 4 }
+  },
+  {
+    "author": { "name": "Sam Founder", "headline": "CTO, AI-Native Travel", "profile_url": "https://www.linkedin.com/in/sam-founder", "followers": 800, "location": "Remote (UK)" },
+    "text": "AI-Native Travel Concierge, Contract, Remote (must be UK), Outside IR35, £450–500/day.",
+    "url": "https://www.linkedin.com/posts/sam-founder_contract-activity-7200000000000000001-cd34?utm_source=share",
+    "posted_at": "2026-07-07T12:00:00.000Z",
+    "reactions": { "total": 12 }
+  },
+  {
+    "author": { "name": "Pat Staffing", "headline": "US Tech Recruiter", "profile_url": "https://www.linkedin.com/in/pat-staffing", "followers": 500, "location": "New York, United States" },
+    "text": "AI Engineer contract, remote USA only, W2.",
+    "url": "https://www.linkedin.com/posts/pat-staffing_ai-activity-7200000000000000002-ef56?utm_source=share",
+    "posted_at": "2026-07-07T15:00:00.000Z",
+    "reactions": { "total": 3 }
+  },
+  {
+    "author": { "name": "Chris Seeker", "headline": "AI Engineer", "profile_url": "https://www.linkedin.com/in/chris-seeker", "followers": 300, "location": "Manchester, United Kingdom" },
+    "text": "#OpenToWork — seeking contract AI engineering roles, outside IR35, available immediately.",
+    "url": "https://www.linkedin.com/posts/chris-seeker_opentowork-activity-7200000000000000003-gh78?utm_source=share",
+    "posted_at": "2026-07-06T10:00:00.000Z",
+    "reactions": { "total": 5 }
+  },
+  {
+    "author": { "name": "JobWharf", "headline": "Contract jobs aggregator", "profile_url": "https://www.linkedin.com/company/jobwharf", "followers": 42000, "location": "United Kingdom" },
+    "text": "New: AI Engineer, Outside IR35, £550/day, Remote UK. Apply via link.",
+    "url": "https://www.linkedin.com/posts/jobwharf_ai-activity-7200000000000000004-ij90?utm_source=share",
+    "posted_at": "2026-07-08T08:00:00.000Z",
+    "reactions": { "total": 8 }
+  }
+]

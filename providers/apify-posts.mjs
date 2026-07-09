@@ -16,3 +16,54 @@ export function parseIr35(text) {
   if (/inside\s+ir35/i.test(text)) return 'inside';
   return undefined;
 }
+
+/** @param {unknown} v @returns {number|undefined} */
+function toEpochMs(v) {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim()) {
+    const ms = Date.parse(v);
+    if (Number.isFinite(ms)) return ms;
+  }
+  return undefined;
+}
+
+/** Strip only the `?utm…`/query string from a LinkedIn post URL, KEEPING the -code suffix. @param {string} u @returns {string} */
+function cleanPostUrl(u) {
+  if (typeof u !== 'string') return '';
+  const q = u.indexOf('?');
+  return (q === -1 ? u : u.slice(0, q)).trim();
+}
+
+/** Dig the reaction count out of the actor's nested reactions object (or scalar). @param {any} r @returns {number|undefined} */
+function reactionCount(r) {
+  if (typeof r === 'number' && Number.isFinite(r)) return r;
+  if (r && typeof r === 'object' && Number.isFinite(r.total)) return r.total;
+  return undefined;
+}
+
+/**
+ * Normalise one raw Apify posts-search item into a warm-post record.
+ * `posterType` is left undefined here — the classify stage (warm-scan.mjs) sets it.
+ * @param {Record<string, any>} raw
+ * @returns {{poster:{name:string,headline:string,url:string,followers:(number|undefined)},posterType:undefined,text:string,dayRate:(string|undefined),ir35:('outside'|'inside'|undefined),location:string,url:string,postedAt:(number|undefined),reactions:(number|undefined)}}
+ */
+export function mapApifyPost(raw) {
+  const a = (raw && typeof raw.author === 'object' && raw.author) ? raw.author : {};
+  const text = typeof raw.text === 'string' ? raw.text : '';
+  return {
+    poster: {
+      name: typeof a.name === 'string' ? a.name.trim() : '',
+      headline: typeof a.headline === 'string' ? a.headline.trim() : '',
+      url: typeof a.profile_url === 'string' ? a.profile_url.trim() : '',
+      followers: Number.isFinite(a.followers) ? a.followers : undefined,
+    },
+    posterType: undefined,
+    text,
+    dayRate: parseDayRate(text),
+    ir35: parseIr35(text),
+    location: typeof a.location === 'string' ? a.location.trim() : '',
+    url: cleanPostUrl(raw.url),
+    postedAt: toEpochMs(raw.posted_at ?? raw.postedAt),
+    reactions: reactionCount(raw.reactions),
+  };
+}
