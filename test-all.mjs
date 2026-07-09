@@ -4714,6 +4714,9 @@ console.log('\n30. Warm-signal discovery — CP-8');
   r0.reactions === 34 ? pass('mapApifyPost nested reactions') : fail('mapApifyPost nested reactions');
   r0.url.endsWith('-ab12') && !r0.url.includes('utm') ? pass('mapApifyPost url -code kept, utm stripped') : fail('mapApifyPost url cleaning');
   r0.poster.name === 'Jane Recruiter' ? pass('mapApifyPost author.name') : fail('mapApifyPost author.name');
+  // Real Apify contract: post_url, stats.total_reactions, posted_at.timestamp
+  r0.location === '' ? pass('mapApifyPost real actor: no author.location → empty string') : fail(`mapApifyPost real actor location unexpectedly '${r0.location}'`);
+  (r0.url !== '' && typeof r0.reactions === 'number' && typeof r0.postedAt === 'number') ? pass('mapApifyPost real contract fields (post_url, stats, posted_at.timestamp)') : fail(`mapApifyPost real contract: url='${r0.url}' reactions=${r0.reactions} postedAt=${r0.postedAt}`);
 
   // Filters / classify
   isJobSeeker('#OpenToWork seeking contract', ['seeking contract']) === true ? pass('isJobSeeker drop') : fail('isJobSeeker drop');

@@ -38,8 +38,9 @@ function cleanPostUrl(u) {
 function reactionCount(r) {
   if (typeof r === 'number' && Number.isFinite(r)) return r;
   if (r && typeof r === 'object') {
-    const total = /** @type {any} */ (r).total;
-    if (Number.isFinite(total)) return total;
+    const o = /** @type {any} */ (r);
+    const n = Number.isFinite(o.total_reactions) ? o.total_reactions : o.total;
+    if (Number.isFinite(n)) return n;
   }
   return undefined;
 }
@@ -89,8 +90,8 @@ export function mapApifyPost(raw) {
     dayRate: parseDayRate(text),
     ir35: parseIr35(text),
     location: typeof a.location === 'string' ? a.location.trim() : '',
-    url: cleanPostUrl(raw.url),
-    postedAt: toEpochMs(raw.posted_at ?? raw.postedAt),
-    reactions: reactionCount(raw.reactions),
+    url: cleanPostUrl(raw.post_url ?? raw.url),
+    postedAt: toEpochMs(raw.posted_at?.timestamp ?? raw.posted_at ?? raw.postedAt),
+    reactions: reactionCount(raw.stats ?? raw.reactions),
   };
 }
