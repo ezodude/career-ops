@@ -11,7 +11,8 @@ export function isJobSeeker(text, signals) {
 }
 
 import { pathToFileURL as _p } from 'url';
-const { compileKeyword } = await import(_p(process.cwd() + '/scan.mjs').href);
+const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
+const { mapApifyPost } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
 
 /** Classify a poster by name: an aggregator repost page vs an individual human. @param {string} name @param {string[]} aggregatorPages @returns {('human'|'aggregator')} */
 export function classifyPosterType(name, aggregatorPages) {
@@ -33,4 +34,31 @@ export function buildWarmTags(record) {
   else if (record?.ir35 === 'inside') tags.push('[inside IR35]');
   if (record?.dayRate) tags.push(record.dayRate);
   return tags.join(' ');
+}
+
+/**
+ * Pure discovery pipeline: raw actor items → categorised warm records.
+ * normalise → drop job-seekers → region gate → classify poster-type → dedup on cleaned URL.
+ * @param {Record<string, any>[]} rawItems
+ * @param {{location_filter?:object, aggregator_pages?:string[], jobseeker_signals?:string[]}} config
+ * @returns {{humans:object[], aggregators:object[]}}
+ */
+export function runWarmChain(rawItems, config) {
+  const passesRegion = buildLocationFilter(config?.location_filter);
+  const seekerSignals = Array.isArray(config?.jobseeker_signals) ? config.jobseeker_signals : [];
+  const aggPages = Array.isArray(config?.aggregator_pages) ? config.aggregator_pages : [];
+  const seen = new Set();
+  const humans = [];
+  const aggregators = [];
+  for (const raw of Array.isArray(rawItems) ? rawItems : []) {
+    const rec = mapApifyPost(raw);
+    if (!rec.url || seen.has(rec.url)) continue;           // dedup on cleaned URL
+    if (isJobSeeker(rec.text, seekerSignals)) continue;    // wrong direction
+    // Region gate over poster location AND post text (findings §5: either can carry the region).
+    if (!passesRegion(rec.location) && !passesRegion(rec.text)) continue;
+    seen.add(rec.url);
+    rec.posterType = classifyPosterType(rec.poster.name, aggPages);
+    (rec.posterType === 'aggregator' ? aggregators : humans).push(rec);
+  }
+  return { humans, aggregators };
 }
