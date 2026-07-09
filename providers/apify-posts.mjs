@@ -37,7 +37,10 @@ function cleanPostUrl(u) {
 /** Dig the reaction count out of the actor's nested reactions object (or scalar). @param {unknown} r @returns {number|undefined} */
 function reactionCount(r) {
   if (typeof r === 'number' && Number.isFinite(r)) return r;
-  if (r && typeof r === 'object' && Number.isFinite(r.total)) return r.total;
+  if (r && typeof r === 'object') {
+    const total = /** @type {any} */ (r).total;
+    if (Number.isFinite(total)) return total;
+  }
   return undefined;
 }
 
