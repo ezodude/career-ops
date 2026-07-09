@@ -9,3 +9,16 @@ export function isJobSeeker(text, signals) {
   const lower = text.toLowerCase();
   return signals.some(s => typeof s === 'string' && s && lower.includes(s.toLowerCase()));
 }
+
+import { pathToFileURL as _p } from 'url';
+const { compileKeyword } = await import(_p(process.cwd() + '/scan.mjs').href);
+
+/** Classify a poster by name: an aggregator repost page vs an individual human. @param {string} name @param {string[]} aggregatorPages @returns {('human'|'aggregator')} */
+export function classifyPosterType(name, aggregatorPages) {
+  if (typeof name !== 'string' || !name.trim() || !Array.isArray(aggregatorPages)) return 'human';
+  const lower = name.toLowerCase();
+  const matchers = aggregatorPages
+    .filter(k => typeof k === 'string' && k.length > 0)
+    .map(k => compileKeyword(k.toLowerCase()));
+  return matchers.some(m => m(lower)) ? 'aggregator' : 'human';
+}
