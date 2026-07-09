@@ -22,3 +22,15 @@ export function classifyPosterType(name, aggregatorPages) {
     .map(k => compileKeyword(k.toLowerCase()));
   return matchers.some(m => m(lower)) ? 'aggregator' : 'human';
 }
+
+/** Triage tags for a warm-leads row: poster-type + region + optional IR35/day-rate. Emits NO [contract?] tag. @param {{posterType?:string,location?:string,ir35?:string,dayRate?:string}} record @returns {string} */
+export function buildWarmTags(record) {
+  const tags = [record?.posterType === 'aggregator' ? '[aggregator]' : '[warm]'];
+  const loc = (record?.location || '').toLowerCase();
+  if (/\bremote\b/.test(loc)) tags.push('[remote]');
+  else if (/\b(uk|united kingdom|london|england|scotland|wales)\b/.test(loc)) tags.push('[UK]');
+  if (record?.ir35 === 'outside') tags.push('[outside IR35]');
+  else if (record?.ir35 === 'inside') tags.push('[inside IR35]');
+  if (record?.dayRate) tags.push(record.dayRate);
+  return tags.join(' ');
+}
