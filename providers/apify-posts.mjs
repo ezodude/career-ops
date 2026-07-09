@@ -5,7 +5,7 @@
 /** Parse a UK day rate like "£600/day" or "£450–500/day" from free text. @param {string} text @returns {string|undefined} */
 export function parseDayRate(text) {
   if (typeof text !== 'string') return undefined;
-  const m = text.match(/£\s?\d[\d,]*(?:\s?[–-]\s?\d[\d,]*)?\s?(?:\/|\s?per\s?)?day/i);
+  const m = text.match(/£\s?\d[\d,]*(?:\s?[–-]\s?\d[\d,]*)?\s?(?:\/|per\s)\s?day/i);
   return m ? m[0].replace(/\s+/g, '') : undefined;
 }
 
@@ -27,14 +27,14 @@ function toEpochMs(v) {
   return undefined;
 }
 
-/** Strip only the `?utm…`/query string from a LinkedIn post URL, KEEPING the -code suffix. @param {string} u @returns {string} */
+/** Strip the ?utm… query string; preserve the full path including the trailing LinkedIn activity code. @param {string} u @returns {string} */
 function cleanPostUrl(u) {
   if (typeof u !== 'string') return '';
   const q = u.indexOf('?');
   return (q === -1 ? u : u.slice(0, q)).trim();
 }
 
-/** Dig the reaction count out of the actor's nested reactions object (or scalar). @param {any} r @returns {number|undefined} */
+/** Dig the reaction count out of the actor's nested reactions object (or scalar). @param {unknown} r @returns {number|undefined} */
 function reactionCount(r) {
   if (typeof r === 'number' && Number.isFinite(r)) return r;
   if (r && typeof r === 'object' && Number.isFinite(r.total)) return r.total;
@@ -48,6 +48,7 @@ function reactionCount(r) {
  * @returns {{poster:{name:string,headline:string,url:string,followers:(number|undefined)},posterType:undefined,text:string,dayRate:(string|undefined),ir35:('outside'|'inside'|undefined),location:string,url:string,postedAt:(number|undefined),reactions:(number|undefined)}}
  */
 export function mapApifyPost(raw) {
+  if (!raw || typeof raw !== 'object') raw = {};
   const a = (raw && typeof raw.author === 'object' && raw.author) ? raw.author : {};
   const text = typeof raw.text === 'string' ? raw.text : '';
   return {
