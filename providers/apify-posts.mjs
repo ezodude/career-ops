@@ -50,6 +50,29 @@ function reactionCount(r) {
  * @param {Record<string, any>} raw
  * @returns {{poster:{name:string,headline:string,url:string,followers:(number|undefined)},posterType:undefined,text:string,dayRate:(string|undefined),ir35:('outside'|'inside'|undefined),location:string,url:string,postedAt:(number|undefined),reactions:(number|undefined)}}
  */
+const API_BASE = 'https://api.apify.com/v2/acts';
+
+/** Normalise `user/actor` → `user~actor`. @param {string} actor @returns {string} */
+export function normalizeActor(actor) { return String(actor).trim().replace(/\//g, '~'); }
+
+/**
+ * PAID: run the posts-search actor for one keyword and return raw dataset items.
+ * Not unit-tested (spends money). Caller must have obtained a spend-go.
+ * @param {string} actor @param {string} keyword
+ * @param {{token:string, limit?:number, fetchJson:Function, timeoutMs?:number}} opts
+ * @returns {Promise<Record<string, any>[]>}
+ */
+export async function fetchPosts(actor, keyword, { token, limit = 30, fetchJson, timeoutMs = 120_000 }) {
+  const url = new URL(`${API_BASE}/${normalizeActor(actor)}/run-sync-get-dataset-items`);
+  url.searchParams.set('token', token);
+  const input = { keyword, sort_type: 'date_posted', date_filter: 'past-week', limit };
+  const res = await fetchJson(url.toString(), {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input), redirect: 'error', timeoutMs,
+  });
+  return Array.isArray(res) ? res : [];
+}
+
 export function mapApifyPost(raw) {
   if (!raw || typeof raw !== 'object') raw = {};
   const a = (raw && typeof raw.author === 'object' && raw.author) ? raw.author : {};

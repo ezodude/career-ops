@@ -6,6 +6,8 @@
 
 import { pathToFileURL as _p } from 'url';
 import { readFileSync as _read, writeFileSync as _write, existsSync as _exists } from 'fs';
+import { makeHttpCtx } from './providers/_http.mjs';
+import yaml from 'js-yaml';
 
 const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
 const { mapApifyPost } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
@@ -105,4 +107,60 @@ export function appendToWarmLeads(result, file = WARM_LEADS_PATH) {
   text = insertUnder(text, '## Warm leads', Array.isArray(result?.humans) ? result.humans : []);
   text = insertUnder(text, '## Aggregators', Array.isArray(result?.aggregators) ? result.aggregators : []);
   _write(file, text, 'utf-8');
+}
+
+const { fetchPosts } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
+
+const APIFY_RESULT_COST_PER_1K = 5; // $5 / 1,000 results (pay-per-result)
+
+/** Estimated USD for a full run: $5/1k × keywords × limit. @param {{keywords?:string[], limit?:number}} config @returns {number} */
+export function estimateCost(config) {
+  const kw = Array.isArray(config?.keywords) ? config.keywords.length : 0;
+  const limit = Number.isFinite(config?.limit) ? config.limit : 30;
+  return APIFY_RESULT_COST_PER_1K * (kw * limit) / 1000;
+}
+
+/** Load portals.yml and return the warm_signals config merged with the top-level location_filter. @param {string} portalsPath @returns {object} */
+function loadWarmConfig(portalsPath) {
+  const cfg = yaml.load(_read(portalsPath, 'utf-8')) || {};
+  const warm = (cfg.warm_signals && typeof cfg.warm_signals === 'object') ? cfg.warm_signals : {};
+  return { ...warm, location_filter: cfg.location_filter };
+}
+
+async function main(argv) {
+  const spend = argv.includes('--spend');
+  const portalsPath = process.env.CAREER_OPS_PORTALS || 'portals.yml';
+  const config = loadWarmConfig(portalsPath);
+  const keywords = Array.isArray(config.keywords) ? config.keywords : [];
+  const limit = Number.isFinite(config.limit) ? config.limit : 30;
+
+  if (!spend) {
+    console.log('DRY PREVIEW — no spend. Pass --spend to run the PAID Apify search.');
+    console.log(`  actor:    ${config.actor || '(unset)'}`);
+    console.log(`  keywords: ${keywords.length ? keywords.join(', ') : '(none)'}`);
+    console.log(`  limit:    ${limit}/keyword`);
+    console.log(`  est cost: ~$${estimateCost(config).toFixed(2)} ($5/1k × ${keywords.length} × ${limit})`);
+    return;
+  }
+
+  const token = process.env.APIFY_TOKEN;
+  if (!token || !token.trim()) throw new Error('warm-scan: APIFY_TOKEN not set — add it to .env.');
+  if (!config.actor) throw new Error('warm-scan: warm_signals.actor is unset in portals.yml.');
+  if (keywords.length === 0) throw new Error('warm-scan: warm_signals.keywords is empty in portals.yml.');
+
+  const ctx = makeHttpCtx();
+  const raw = [];
+  for (const kw of keywords) {
+    console.log(`fetching: ${kw}`);
+    const items = await fetchPosts(config.actor, kw, { token: token.trim(), limit, fetchJson: ctx.fetchJson });
+    raw.push(...items);
+  }
+  const result = runWarmChain(raw, config);
+  appendToWarmLeads(result);
+  console.log(`warm leads: ${result.humans.length} human, ${result.aggregators.length} aggregator → ${WARM_LEADS_PATH}`);
+}
+
+// Only run main() when executed directly — importing for tests must not fetch.
+if (process.argv[1] && import.meta.url === _p(process.argv[1]).href) {
+  main(process.argv.slice(2)).catch(err => { console.error(err.message); process.exit(1); });
 }
