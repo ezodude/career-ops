@@ -59,8 +59,9 @@ export function runWarmChain(rawItems, config) {
     const rec = mapApifyPost(raw);
     if (!rec.url || seen.has(rec.url)) continue;           // dedup on cleaned URL
     if (isJobSeeker(rec.text, seekerSignals)) continue;    // wrong direction
-    // Region gate over poster location AND post text (findings §5: either can carry the region).
-    if (!passesRegion(rec.location) && !passesRegion(rec.text)) continue;
+    // Region gate over combined location+text — a block hit anywhere vetoes.
+    const region = `${rec.location} ${rec.text}`.trim();
+    if (!passesRegion(region)) continue;
     seen.add(rec.url);
     rec.posterType = classifyPosterType(rec.poster?.name ?? '', aggPages);
     (rec.posterType === 'aggregator' ? aggregators : humans).push(rec);
@@ -73,9 +74,9 @@ const WARM_SKELETON = `# Warm leads — LinkedIn hiring posts\n\nOpt-in warm-sig
 
 /** Render one warm-leads markdown row. @param {object} record @returns {string} */
 export function formatWarmLead(record) {
-  const url = String(record?.url || '').replace(/\|/g, '%7C');
-  const name = String(record?.poster?.name || '').replace(/\|/g, '/');
-  const headline = String(record?.poster?.headline || '').replace(/\|/g, '/');
+  const url = String(record?.url || '').replace(/\|/g, '%7C').replace(/[\r\n]/g, '');
+  const name = String(record?.poster?.name || '').replace(/\|/g, '/').replace(/[\r\n]/g, ' ');
+  const headline = String(record?.poster?.headline || '').replace(/\|/g, '/').replace(/[\r\n]/g, ' ');
   const who = headline ? `${name} — ${headline}` : name;
   const tags = buildWarmTags(record);
   return `- [ ] ${url} | ${who}${tags ? `  ${tags}` : ''}`;
@@ -118,11 +119,15 @@ export function estimateCost(config) {
   return APIFY_RESULT_COST_PER_1K * (kw * limit) / 1000;
 }
 
-/** Load portals.yml and return the warm_signals config merged with the top-level location_filter. @param {string} portalsPath @returns {object} */
+/** Load portals.yml → warm config with an effective location_filter (user allow list + a warm-specific block list). @param {string} portalsPath @returns {any} */
 function loadWarmConfig(portalsPath) {
   const cfg = /** @type {any} */ (yaml.load(_read(portalsPath, 'utf-8')) || {});
   const warm = (cfg.warm_signals && typeof cfg.warm_signals === 'object') ? cfg.warm_signals : {};
-  return { ...warm, location_filter: cfg.location_filter };
+  const base = (cfg.location_filter && typeof cfg.location_filter === 'object') ? cfg.location_filter : {};
+  const defaultBlock = ['united states', 'usa', 'u.s.', 'w2', 'offshore'];
+  const warmBlock = Array.isArray(warm.block_locations) ? warm.block_locations : defaultBlock;
+  const location_filter = { ...base, block: [...(Array.isArray(base.block) ? base.block : []), ...warmBlock] };
+  return { ...warm, location_filter };
 }
 
 /**

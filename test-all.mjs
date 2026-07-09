@@ -4738,6 +4738,11 @@ console.log('\n30. Warm-signal discovery — CP-8');
   chain.humans.some(h => h.poster.name === 'Pat Staffing') === false ? pass('runWarmChain drops US-only') : fail('runWarmChain US-only leaked');
   chain.humans.some(h => h.poster.name === 'Chris Seeker') === false ? pass('runWarmChain drops job-seeker') : fail('runWarmChain job-seeker leaked');
 
+  // Region gate must veto a US-location post even when its text contains an allow-word ('remote').
+  const usItem = [{ author: { name: 'US Co', headline: 'Recruiter', profile_url: 'https://x/us', location: 'San Francisco, United States' }, text: 'AI Engineer, fully remote, £600/day outside IR35', url: 'https://ln.co/posts/us-zz99', posted_at: '2026-07-08T00:00:00Z', reactions: { total: 1 } }];
+  const usChain = runWarmChain(usItem, cfg);
+  (usChain.humans.length === 0 && usChain.aggregators.length === 0) ? pass('runWarmChain vetoes US-location despite remote in text') : fail('runWarmChain US-location leaked via text allow-word');
+
   // Cost + row format
   estimateCost({ keywords: ['a', 'b'], limit: 30 }) === 0.3 ? pass('estimateCost 2×30') : fail('estimateCost');
   formatWarmLead({ poster: { name: 'Jane', headline: 'AI' }, url: 'https://x/y-ab12', posterType: 'human', location: 'Remote' })
