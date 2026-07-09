@@ -1,6 +1,8 @@
 # CP-4: Reachability scoring from connections CSV
 
-**Status:** Proposed · **Phase:** 1 · **Depends on:** CP-1 · **Effort:** M
+**Status:** ▶ Next — **blocked on the LinkedIn connections export** (`data/connections.csv`, user downloading as of 2026-07-09) · **Phase:** 1 · **Depends on:** CP-1 · **Effort:** M
+
+> **Now also owns the CP-8 poster-warmth join.** Beyond scoring board offers by *company*, CP-4 is extended to score the **poster** of a [CP-8](CP-8-network-first-discovery.md) warm-signal lead — "do I have a warm path to this person" — and rank `data/warm-leads.md` by it. This is the piece the completed CP-8 discovery adapter is waiting on; it unblocks the moment the connections CSV lands.
 
 ## Overview
 
@@ -17,6 +19,7 @@ This ticket scores each role for reachability using a cached LinkedIn connection
 - Annotate `pipeline.md` and the tracker with the warm flag and connection name(s).
 - **2nd-degree stays out of the routine loop.** For a role the user chooses to chase, allow an opt-in lookup (Apify company-employees actor, or paste a name). Never run it automatically.
 - Document the re-export cadence in onboarding. The CSV is refreshed manually.
+- **Poster-warmth join (for CP-8):** match a warm-lead poster (`poster.name`, and their org parsed from the headline) against the connections index; annotate + rank `data/warm-leads.md` rows by warm-path (1st-degree to the poster, or a connection at the poster's org). Same index, no new data model.
 
 ## Definition of Done
 
@@ -26,4 +29,5 @@ This ticket scores each role for reachability using a cached LinkedIn connection
 - [ ] Company-name matching handles common suffix and case differences.
 - [ ] Missing or empty `connections.csv` degrades gracefully (all COLD, clear message).
 - [ ] 2nd-degree lookup is opt-in only and documented; nothing automatic.
+- [ ] **CP-8 poster-warmth join:** `data/warm-leads.md` humans are scored + ranked by warm-path to the poster (reusing the same index).
 - [ ] `test-all.mjs` passes.

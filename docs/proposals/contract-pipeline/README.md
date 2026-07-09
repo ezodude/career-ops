@@ -31,7 +31,7 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 | [CP-9](CP-9-keyword-matching-precision.md) | Keyword matching precision | 1 | CP-1 | S | ✅ Built |
 | [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1, CP-9 | S | ✅ Built |
 | [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M | ▶ Next |
-| [CP-8](CP-8-network-first-discovery.md) | **Warm-signal discovery** (recruiter/dev hiring posts, reshaped) | 1 | CP-4 | L | ▶ Discovery adapter shipped · CP-4 poster-join pending |
+| [CP-8](CP-8-network-first-discovery.md) | **Warm-signal discovery** (recruiter/dev hiring posts, reshaped) | 1 | CP-4 | L | ✅ Discovery adapter complete (live-verified) · reachability ranking → CP-4 |
 | [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L | ⏸ Deferred |
 | [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M | ⏸ Deferred |
 | [CP-7](CP-7-evaluation-scoring-upgrade.md) | Evaluation scoring upgrade (contract-fit + path-in) | 1 | CP-3 | M | ⏸ Deferred |
@@ -60,8 +60,8 @@ The board work is not wasted: the provider framework, filtering, and tagging all
 ## Build order — REVISED 2026-07-09 (warm-first)
 
 1. ✅ CP-1 → ✅ CP-2 → ✅ CP-9 → ✅ CP-3. Board supply + filtering — built, but the cold-apply board channel is low-yield for contractors (see Strategic pivot). Kept as skimmable background supply.
-2. **▶ CP-4 (next).** Reachability from the connections CSV — the warm engine; makes any lead actionable. Built against a sample CSV now; real export swapped in when it lands. Extended to score the *poster* for the warm channel.
-3. **CP-8 reshaped — warm-signal discovery.** Region-gated LinkedIn recruiter/dev *hiring posts* via Apify content search (validated with one cheap search first), joined to CP-4 reachability. The actual high-yield channel; pulled forward from Phase 2.
+2. ✅ **CP-8 — warm-signal discovery (complete, live-verified 2026-07-09).** Standalone opt-in `warm-scan.mjs` pulls region-gated LinkedIn recruiter/dev *hiring posts* via Apify content search, classifies human vs aggregator, writes `data/warm-leads.md`. A live `--spend` run returned 14 human leads + 4 aggregators. The actual high-yield channel.
+3. **▶ CP-4 (next — blocked on the LinkedIn connections export, in progress).** Reachability from the connections CSV — the warm engine; makes any lead actionable. **Extended to score the *poster*** so it can rank CP-8's warm leads by warm-path. Real export swapped in when it lands.
 4. ⏸ Deferred, revisit only if the warm channel proves out: CP-5 (minimal warm-lead log), CP-6, CP-7.
 
 ## Cost note
