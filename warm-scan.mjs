@@ -10,7 +10,7 @@ import { makeHttpCtx } from './providers/_http.mjs';
 import yaml from 'js-yaml';
 
 const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
-const { mapApifyPost } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
+const { mapApifyPost, fetchPosts } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
 
 /** True when post text matches any job-seeker signal (wrong direction — drop). @param {string} text @param {string[]} signals @returns {boolean} */
 export function isJobSeeker(text, signals) {
@@ -108,8 +108,6 @@ export function appendToWarmLeads(result, file = WARM_LEADS_PATH) {
   text = insertUnder(text, '## Aggregators', Array.isArray(result?.aggregators) ? result.aggregators : []);
   _write(file, text, 'utf-8');
 }
-
-const { fetchPosts } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
 
 const APIFY_RESULT_COST_PER_1K = 5; // $5 / 1,000 results (pay-per-result)
 
