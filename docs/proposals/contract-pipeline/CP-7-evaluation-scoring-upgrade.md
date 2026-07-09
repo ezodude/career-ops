@@ -1,6 +1,8 @@
 # CP-7: Evaluation scoring upgrade (contract-fit + path-in)
 
-**Status:** Proposed · **Phase:** 1 · **Depends on:** CP-3 · **Effort:** M
+**Status:** ⏸ Deferred (2026-07-09 pivot) · **Phase:** 1 · **Depends on:** CP-3 · **Effort:** M
+
+> **Deferred by the [2026-07-09 strategic pivot](README.md#strategic-pivot--2026-07-09-board--warm).** Scoring cold-apply board roles is negative ROI. Revisit for the warm channel — and it inherits CP-3's deferred salary/IR35 fit discrimination when it does.
 
 ## Overview
 

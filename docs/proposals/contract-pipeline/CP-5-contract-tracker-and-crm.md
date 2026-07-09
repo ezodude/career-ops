@@ -1,6 +1,8 @@
 # CP-5: Contract-aware tracker + relationship CRM
 
-**Status:** Proposed · **Phase:** 1 · **Depends on:** CP-4 · **Effort:** L
+**Status:** ⏸ Deferred (2026-07-09 pivot) · **Phase:** 1 · **Depends on:** CP-4 · **Effort:** L
+
+> **Deferred by the [2026-07-09 strategic pivot](README.md#strategic-pivot--2026-07-09-board--warm).** Full contract CRM is premature before the warm channel proves out. If lead-tracking is needed sooner, do a minimal warm-lead log only.
 
 ## Overview
 

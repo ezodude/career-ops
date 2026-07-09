@@ -1,6 +1,8 @@
 # CP-6: Reachability view + bench/renewal alerts
 
-**Status:** Proposed · **Phase:** 1 · **Depends on:** CP-4, CP-5 · **Effort:** M
+**Status:** ⏸ Deferred (2026-07-09 pivot) · **Phase:** 1 · **Depends on:** CP-4, CP-5 · **Effort:** M
+
+> **Deferred by the [2026-07-09 strategic pivot](README.md#strategic-pivot--2026-07-09-board--warm).** Bench/renewal ops tooling, not discovery — revisit once contracts are actually flowing.
 
 ## Overview
 

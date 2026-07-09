@@ -31,27 +31,38 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 | [CP-9](CP-9-keyword-matching-precision.md) | Keyword matching precision | 1 | CP-1 | S | ✅ Built |
 | [CP-3](CP-3-contract-location-filtering.md) | Contract + location filtering | 1 | CP-1, CP-9 | S | ✅ Built |
 | [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M | ▶ Next |
-| [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L | Proposed |
-| [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M | Proposed |
-| [CP-7](CP-7-evaluation-scoring-upgrade.md) | Evaluation scoring upgrade (contract-fit + path-in) | 1 | CP-3 | M | Proposed |
-| [CP-8](CP-8-network-first-discovery.md) | Network-first discovery (future) | 2 | CP-4 | L | Phase 2 |
+| [CP-8](CP-8-network-first-discovery.md) | **Warm-signal discovery** (recruiter/dev hiring posts, reshaped) | 1 | CP-4 | L | ▶ Pulled forward |
+| [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L | ⏸ Deferred |
+| [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M | ⏸ Deferred |
+| [CP-7](CP-7-evaluation-scoring-upgrade.md) | Evaluation scoring upgrade (contract-fit + path-in) | 1 | CP-3 | M | ⏸ Deferred |
 
 ## Progress
 
 **As of 2026-07-07:** CP-1, CP-2, CP-9, and CP-3 are built and pushed. New contract supply (Reed, Adzuna, Apify LinkedIn Jobs) flows through a precise, boundary-aware title matcher plus a gig-mill company blocklist, and is now gated by the CP-3 contract + location filter stage: a config-driven `contract_filter.drop` (permanent) that never silently drops unknowns, the activated `location_filter` (UK/remote/EU), and `[contract] [remote] [Reed]`-style triage tags on `pipeline.md` rows. **CP-4 is next** — free warm-intro reachability scoring on this supply.
 
+## Strategic pivot — 2026-07-09 (board → warm)
+
+Field evidence (operator's own contracting history): **cold applications to job boards — LinkedIn Jobs, Reed — never convert.** You email a CV into a void, drowned in LLM-generated applications. The contracts that *do* land come from **LinkedIn posts by internal/agency recruiters and devs hiring for their org** — a warm, social-feed signal, region-gated, where you respond to a person, not an ATS.
+
+Phase 1 front-loaded board discovery (CP-1/2/3) and deferred the network channel (CP-8) to Phase 2. That is now **inverted**:
+
+- **Keep — the warm engine:** CP-4 (reachability) is the priority; it makes any lead actionable. Extended to score the *poster* (person), not just their company.
+- **Pull forward — the working channel:** CP-8, reshaped as **warm-signal discovery** (recruiter/dev hiring posts via Apify *content* search, region-gated, joined to reachability), becomes near-term. Validate the channel with one cheap Apify post search *before* building the adapter.
+- **Deferred — revisit only after the warm channel proves out:** CP-5 (full CRM → trim to a minimal warm-lead log if needed), CP-6 (bench/renewal ops), CP-7 (evaluation scoring — scoring dead-channel board roles is negative ROI).
+- **Board adapters (CP-1/2/3) stay on as free background supply to *skim* — not the main bet.**
+
+The board work is not wasted: the provider framework, filtering, and tagging all get reused by the warm-signal adapter and reachability output.
+
 ## Reference
 
 - [`SCANNING-MODEL-AND-UAT.md`](SCANNING-MODEL-AND-UAT.md) — what a scan actually touches (source taxonomy), how CP-3 behaves per source type, the "no permanent-noise reduction on ATS boards" limitation (by design), and a repeatable cost-free UAT recipe with results.
 
-## Build order
+## Build order — REVISED 2026-07-09 (warm-first)
 
-1. ✅ CP-1 → ✅ CP-2 → ✅ CP-9 → ✅ CP-3. New contract supply, matched precisely and filtered.
-2. **▶ CP-4 (next).** Free warm flagging on the new supply.
-3. CP-5 then CP-6. Manage the contract pipeline.
-4. CP-7. Sharpen ranking.
-
-CP-8 is sketched only. Build it after Phase 1 proves the reachability primitive.
+1. ✅ CP-1 → ✅ CP-2 → ✅ CP-9 → ✅ CP-3. Board supply + filtering — built, but the cold-apply board channel is low-yield for contractors (see Strategic pivot). Kept as skimmable background supply.
+2. **▶ CP-4 (next).** Reachability from the connections CSV — the warm engine; makes any lead actionable. Built against a sample CSV now; real export swapped in when it lands. Extended to score the *poster* for the warm channel.
+3. **CP-8 reshaped — warm-signal discovery.** Region-gated LinkedIn recruiter/dev *hiring posts* via Apify content search (validated with one cheap search first), joined to CP-4 reachability. The actual high-yield channel; pulled forward from Phase 2.
+4. ⏸ Deferred, revisit only if the warm channel proves out: CP-5 (minimal warm-lead log), CP-6, CP-7.
 
 ## Cost note
 
