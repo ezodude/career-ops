@@ -1,7 +1,14 @@
 #!/usr/bin/env node
+// @ts-check
 // warm-scan.mjs — standalone, opt-in, PAID warm-signal discovery (CP-8).
 // Default run = zero-spend dry preview. Actual Apify fetch only on `--spend`.
 // Reuses scan.mjs pure helpers; writes data/warm-leads.md (never touches pipeline.md).
+
+import { pathToFileURL as _p } from 'url';
+import { readFileSync as _read, writeFileSync as _write, existsSync as _exists } from 'fs';
+
+const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
+const { mapApifyPost } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
 
 /** True when post text matches any job-seeker signal (wrong direction — drop). @param {string} text @param {string[]} signals @returns {boolean} */
 export function isJobSeeker(text, signals) {
@@ -9,10 +16,6 @@ export function isJobSeeker(text, signals) {
   const lower = text.toLowerCase();
   return signals.some(s => typeof s === 'string' && s && lower.includes(s.toLowerCase()));
 }
-
-import { pathToFileURL as _p } from 'url';
-const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
-const { mapApifyPost } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
 
 /** Classify a poster by name: an aggregator repost page vs an individual human. @param {string} name @param {string[]} aggregatorPages @returns {('human'|'aggregator')} */
 export function classifyPosterType(name, aggregatorPages) {
@@ -32,7 +35,7 @@ export function buildWarmTags(record) {
   else if (/\b(uk|united kingdom|london|england|scotland|wales)\b/.test(loc)) tags.push('[UK]');
   if (record?.ir35 === 'outside') tags.push('[outside IR35]');
   else if (record?.ir35 === 'inside') tags.push('[inside IR35]');
-  if (record?.dayRate) tags.push(record.dayRate);
+  if (record?.dayRate) tags.push(String(record.dayRate).replace(/\|/g, '/').replace(/[\r\n]/g, ' '));
   return tags.join(' ');
 }
 
@@ -57,13 +60,11 @@ export function runWarmChain(rawItems, config) {
     // Region gate over poster location AND post text (findings §5: either can carry the region).
     if (!passesRegion(rec.location) && !passesRegion(rec.text)) continue;
     seen.add(rec.url);
-    rec.posterType = classifyPosterType(rec.poster.name, aggPages);
+    rec.posterType = classifyPosterType(rec.poster?.name ?? '', aggPages);
     (rec.posterType === 'aggregator' ? aggregators : humans).push(rec);
   }
   return { humans, aggregators };
 }
-
-import { readFileSync as _read, writeFileSync as _write, existsSync as _exists } from 'fs';
 
 const WARM_LEADS_PATH = 'data/warm-leads.md';
 const WARM_SKELETON = `# Warm leads — LinkedIn hiring posts\n\nOpt-in warm-signal discovery (CP-8). Run \`node warm-scan.mjs --spend\` to refresh.\n\n## Warm leads\n\n## Aggregators\n`;
@@ -85,7 +86,7 @@ function insertUnder(text, heading, records) {
   const afterHeading = idx + heading.length;
   const nextSection = text.indexOf('\n## ', afterHeading);
   const insertAt = nextSection === -1 ? text.length : nextSection;
-  const fresh = records.filter(r => r?.url && !text.includes(r.url)).map(formatWarmLead);
+  const fresh = records.filter(r => r?.url && !text.includes(`${r.url} |`)).map(formatWarmLead);
   if (fresh.length === 0) return text;
   const block = '\n' + fresh.join('\n') + '\n';
   return text.slice(0, insertAt) + block + text.slice(insertAt);
