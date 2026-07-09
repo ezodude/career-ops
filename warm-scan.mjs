@@ -62,3 +62,46 @@ export function runWarmChain(rawItems, config) {
   }
   return { humans, aggregators };
 }
+
+import { readFileSync as _read, writeFileSync as _write, existsSync as _exists } from 'fs';
+
+const WARM_LEADS_PATH = 'data/warm-leads.md';
+const WARM_SKELETON = `# Warm leads — LinkedIn hiring posts\n\nOpt-in warm-signal discovery (CP-8). Run \`node warm-scan.mjs --spend\` to refresh.\n\n## Warm leads\n\n## Aggregators\n`;
+
+/** Render one warm-leads markdown row. @param {object} record @returns {string} */
+export function formatWarmLead(record) {
+  const url = String(record?.url || '').replace(/\|/g, '%7C');
+  const name = String(record?.poster?.name || '').replace(/\|/g, '/');
+  const headline = String(record?.poster?.headline || '').replace(/\|/g, '/');
+  const who = headline ? `${name} — ${headline}` : name;
+  const tags = buildWarmTags(record);
+  return `- [ ] ${url} | ${who}${tags ? `  ${tags}` : ''}`;
+}
+
+/** Insert rows under a `## Heading`, skipping URLs already present in the file. @param {string} text @param {string} heading @param {object[]} records @returns {string} */
+function insertUnder(text, heading, records) {
+  const idx = text.indexOf(heading);
+  if (idx === -1) return text;
+  const afterHeading = idx + heading.length;
+  const nextSection = text.indexOf('\n## ', afterHeading);
+  const insertAt = nextSection === -1 ? text.length : nextSection;
+  const fresh = records.filter(r => r?.url && !text.includes(r.url)).map(formatWarmLead);
+  if (fresh.length === 0) return text;
+  const block = '\n' + fresh.join('\n') + '\n';
+  return text.slice(0, insertAt) + block + text.slice(insertAt);
+}
+
+/**
+ * Append categorised warm records to warm-leads.md — humans first, aggregators below.
+ * Auto-creates the file with a skeleton. Dedups on post URL already present. I/O boundary.
+ * @param {{humans:object[], aggregators:object[]}} result
+ * @param {string} [file]
+ * @returns {void}
+ */
+export function appendToWarmLeads(result, file = WARM_LEADS_PATH) {
+  if (!_exists(file)) _write(file, WARM_SKELETON, 'utf-8');
+  let text = _read(file, 'utf-8');
+  text = insertUnder(text, '## Warm leads', Array.isArray(result?.humans) ? result.humans : []);
+  text = insertUnder(text, '## Aggregators', Array.isArray(result?.aggregators) ? result.aggregators : []);
+  _write(file, text, 'utf-8');
+}
