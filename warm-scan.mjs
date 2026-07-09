@@ -29,7 +29,7 @@ export function classifyPosterType(name, aggregatorPages) {
   return matchers.some(m => m(lower)) ? 'aggregator' : 'human';
 }
 
-/** Triage tags for a warm-leads row: poster-type + region + optional IR35/day-rate. Emits NO [contract?] tag. @param {{posterType?:string,location?:string,ir35?:string,dayRate?:string}} record @returns {string} */
+/** Triage tags for a warm-leads row: poster-type + region + optional IR35/day-rate. Emits NO [contract?] tag. @param {{posterType?:string,location?:string,text?:string,ir35?:string,dayRate?:string}} record @returns {string} */
 export function buildWarmTags(record) {
   const tags = [record?.posterType === 'aggregator' ? '[aggregator]' : '[warm]'];
   const loc = (record?.location || record?.text || '').toLowerCase();
