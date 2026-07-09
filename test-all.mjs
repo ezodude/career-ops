@@ -4697,6 +4697,53 @@ try {
   fail(`contract filter / tags tests crashed: ${e.message}`);
 }
 
+console.log('\n30. Warm-signal discovery — CP-8');
+{
+  const { readFileSync } = await import('fs');
+  const { mapApifyPost, parseDayRate, parseIr35 } = await import(pathToFileURL(join(ROOT, 'providers/apify-posts.mjs')).href);
+  const { isJobSeeker, classifyPosterType, buildWarmTags, runWarmChain, estimateCost, formatWarmLead } =
+    await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
+  const raw = JSON.parse(readFileSync(join(ROOT, 'fixtures/apify-linkedin-posts-sample.json'), 'utf-8'));
+
+  // Parsers
+  parseDayRate('£600/day') === '£600/day' ? pass('parseDayRate basic') : fail('parseDayRate basic');
+  parseIr35('Outside IR35') === 'outside' ? pass('parseIr35 outside') : fail('parseIr35 outside');
+
+  // Normaliser quirks
+  const r0 = mapApifyPost(raw[0]);
+  r0.reactions === 34 ? pass('mapApifyPost nested reactions') : fail('mapApifyPost nested reactions');
+  r0.url.endsWith('-ab12') && !r0.url.includes('utm') ? pass('mapApifyPost url -code kept, utm stripped') : fail('mapApifyPost url cleaning');
+  r0.poster.name === 'Jane Recruiter' ? pass('mapApifyPost author.name') : fail('mapApifyPost author.name');
+
+  // Filters / classify
+  isJobSeeker('#OpenToWork seeking contract', ['seeking contract']) === true ? pass('isJobSeeker drop') : fail('isJobSeeker drop');
+  classifyPosterType('JobWharf', ['JobWharf']) === 'aggregator' ? pass('classifyPosterType aggregator') : fail('classifyPosterType aggregator');
+  classifyPosterType('Jane Recruiter', ['JobWharf']) === 'human' ? pass('classifyPosterType human') : fail('classifyPosterType human');
+
+  // Tags
+  buildWarmTags({ posterType: 'human', location: 'Remote (UK)', ir35: 'outside', dayRate: '£600/day' }) === '[warm] [remote] [outside IR35] £600/day'
+    ? pass('buildWarmTags human') : fail('buildWarmTags human');
+  buildWarmTags({ posterType: 'aggregator', location: 'London, United Kingdom' }) === '[aggregator] [UK]'
+    ? pass('buildWarmTags aggregator') : fail('buildWarmTags aggregator');
+
+  // Chain
+  const cfg = {
+    location_filter: { allow: ['united kingdom', 'london', 'remote', 'uk'], block: ['united states', 'usa'] },
+    aggregator_pages: ['JobWharf', 'Find Contract Jobs', 'Outside IR35 Jobs'],
+    jobseeker_signals: ['open to work', 'opentowork', 'seeking contract', 'available for'],
+  };
+  const chain = runWarmChain(raw, cfg);
+  chain.humans.length === 2 ? pass('runWarmChain keeps 2 humans') : fail(`runWarmChain humans ${chain.humans.length}`);
+  chain.aggregators.length === 1 ? pass('runWarmChain keeps 1 aggregator') : fail(`runWarmChain aggregators ${chain.aggregators.length}`);
+  chain.humans.some(h => h.poster.name === 'Pat Staffing') === false ? pass('runWarmChain drops US-only') : fail('runWarmChain US-only leaked');
+  chain.humans.some(h => h.poster.name === 'Chris Seeker') === false ? pass('runWarmChain drops job-seeker') : fail('runWarmChain job-seeker leaked');
+
+  // Cost + row format
+  estimateCost({ keywords: ['a', 'b'], limit: 30 }) === 0.3 ? pass('estimateCost 2×30') : fail('estimateCost');
+  formatWarmLead({ poster: { name: 'Jane', headline: 'AI' }, url: 'https://x/y-ab12', posterType: 'human', location: 'Remote' })
+    === '- [ ] https://x/y-ab12 | Jane — AI  [warm] [remote]' ? pass('formatWarmLead row') : fail('formatWarmLead row');
+}
+
 // ── SUMMARY ─────────────────────────────────────────────────────
 
 console.log('\n' + '='.repeat(50));
