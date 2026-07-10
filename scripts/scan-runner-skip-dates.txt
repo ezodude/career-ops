@@ -1,3 +1,4 @@
-# One YYYY-MM-DD per line. If today matches, the scheduled run is skipped.
-# Example:
-# 2026-12-25
+# One date per line in YYYY-MM-DD form. If today matches, the scheduled run is skipped.
+# Add real dates below, one per line.
+# (Do not write an example date in a comment — the launcher substring-matches this
+#  whole file, so any literal date here would silently skip that day's run.)
