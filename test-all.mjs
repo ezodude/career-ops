@@ -4756,7 +4756,7 @@ console.log('\n30. Warm-signal discovery — CP-8');
 
 console.log('\n31. CP-10 scheduled runner + delivery');
 {
-  const { readFileSync, writeFileSync, existsSync, rmSync, mkdtempSync } = await import('fs');
+  const { readFileSync, rmSync, mkdtempSync } = await import('fs');
   const { tmpdir } = await import('os');
   const {
     appendToWarmLeads, isWithinBudget, appendToWarmDigest,

@@ -129,7 +129,8 @@ export function appendToWarmDigest(addedHumans, date, file = WARM_DIGEST_PATH) {
   const section = `\n## ${date} (${rows.length} new)\n\n` + rows.map(formatWarmLead).join('\n') + '\n';
   // Insert directly after the skeleton header so the newest section sits on top of prior dated sections.
   const marker = DIGEST_SKELETON;
-  const at = text.startsWith(marker) ? marker.length : (text.indexOf('\n\n') + 2 || text.length);
+  const nnIdx = text.indexOf('\n\n');
+  const at = text.startsWith(marker) ? marker.length : (nnIdx >= 0 ? nnIdx + 2 : text.length);
   _write(file, text.slice(0, at) + section + text.slice(at), 'utf-8');
 }
 
