@@ -1,0 +1,3 @@
+# One YYYY-MM-DD per line. If today matches, the scheduled run is skipped.
+# Example:
+# 2026-12-25
