@@ -4782,6 +4782,12 @@ console.log('\n31. CP-10 scheduled runner + delivery');
   (r2.addedHumans.length === 0 && r2.addedAggregators.length === 0)
     ? pass('appendToWarmLeads returns empty on re-run (dedup)') : fail(`appendToWarmLeads re-run added ${r2.addedHumans.length}/${r2.addedAggregators.length}`);
 
+  // Budget guard (pure). within iff used + est <= cap − margin.
+  isWithinBudget(1, 0.6, 5, 0.5) === true ? pass('isWithinBudget under cap') : fail('isWithinBudget under cap');
+  isWithinBudget(3.9, 0.6, 5, 0.5) === true ? pass('isWithinBudget at boundary (<=)') : fail('isWithinBudget boundary');
+  isWithinBudget(4.5, 0.6, 5, 0.5) === false ? pass('isWithinBudget over cap') : fail('isWithinBudget over cap');
+  isWithinBudget(NaN, 0.6, 5, 0.5) === false ? pass('isWithinBudget NaN usage → not within') : fail('isWithinBudget NaN guard');
+
   rmSync(tmp, { recursive: true, force: true });
 }
 

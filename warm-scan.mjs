@@ -120,6 +120,36 @@ export function estimateCost(config) {
   return APIFY_RESULT_COST_PER_1K * (kw * limit) / 1000;
 }
 
+/** Pure budget check: true iff usage + estimated spend stays under the cap minus a safety margin. @param {number} usedUsd @param {number} estCost @param {number} capUsd @param {number} margin @returns {boolean} */
+export function isWithinBudget(usedUsd, estCost, capUsd, margin) {
+  const nums = [usedUsd, estCost, capUsd, margin].map(Number);
+  if (!nums.every(Number.isFinite)) return false;
+  const [used, est, cap, m] = nums;
+  return used + est <= cap - m;
+}
+
+/**
+ * Network budget guard: GET Apify monthly usage, compare against the cap. Not unit-tested (network).
+ * Conservative: on any error, returns false (skip the spend) — the FREE-plan hard cap is only a backstop.
+ * @param {(url:string, opts?:object)=>Promise<any>} fetchJson
+ * @param {string} token
+ * @param {any} config
+ * @returns {Promise<{ok:boolean, usedUsd:number|null}>}
+ */
+export async function checkBudget(fetchJson, token, config) {
+  const cap = Number.isFinite(config?.budget_cap_usd) ? config.budget_cap_usd : 5;
+  const margin = Number.isFinite(config?.budget_margin_usd) ? config.budget_margin_usd : 0.5;
+  const est = estimateCost(config);
+  try {
+    const url = `https://api.apify.com/v2/users/me/usage/monthly?token=${encodeURIComponent(token)}`;
+    const body = /** @type {any} */ (await fetchJson(url));
+    const usedUsd = Number(body?.data?.totalUsageCreditsUsdAfterVolumeDiscount);
+    return { ok: isWithinBudget(usedUsd, est, cap, margin), usedUsd: Number.isFinite(usedUsd) ? usedUsd : null };
+  } catch {
+    return { ok: false, usedUsd: null };
+  }
+}
+
 /** Load portals.yml → warm config with an effective location_filter (user allow list + a warm-specific block list). @param {string} portalsPath @returns {any} */
 function loadWarmConfig(portalsPath) {
   const cfg = /** @type {any} */ (yaml.load(_read(portalsPath, 'utf-8')) || {});
@@ -128,6 +158,7 @@ function loadWarmConfig(portalsPath) {
   const defaultBlock = ['united states', 'usa', 'u.s.', 'w2', 'offshore'];
   const warmBlock = Array.isArray(warm.block_locations) ? warm.block_locations : defaultBlock;
   const location_filter = { ...base, block: [...(Array.isArray(base.block) ? base.block : []), ...warmBlock] };
+  // budget_cap_usd / budget_margin_usd (if set on warm_signals) pass through via ...warm; defaults live in checkBudget.
   return { ...warm, location_filter };
 }
 
