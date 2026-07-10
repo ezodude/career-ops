@@ -4,7 +4,7 @@
 # Triggered by launchd (com.career-ops.scan-runner) Mon 09:00. Mirrors wayfinder/nurture-session.sh.
 set -uo pipefail
 
-REPO="/Users/rad/Projects/career-ops"
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
 DRY_RUN="${1:-}"
 
 SKIP_FILE="$(dirname "$0")/scan-runner-skip-dates.txt"
@@ -58,7 +58,7 @@ tell application "iTerm"
     tell current session of newWindow
         write text "cd ${REPO}"
         delay 1
-        write text "/Users/rad/.local/bin/claude '${PROMPT}'"
+        write text "claude '${PROMPT}'"
     end tell
 end tell
 EOF
