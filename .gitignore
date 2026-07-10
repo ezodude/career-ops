@@ -4,6 +4,8 @@ data/applications.md
 data/applications.db
 data/pipeline.md
 data/warm-leads.md
+data/warm-digest.md
+data/scan-runner.log
 data/scan-history.tsv
 data/parser-output/**/*.json
 !data/parser-output/.gitkeep

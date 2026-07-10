@@ -275,6 +275,32 @@ node scan.mjs --verify          # zero-token discovery + Playwright liveness che
 
 The verification is sequential and only runs against new offers (after dedup), so the cost stays bounded.
 
+## Scheduled scans (macOS, optional)
+
+A weekly Launch Agent runs both scans and opens a triage session only when there are new warm leads.
+
+```bash
+# install
+ln -sf "$PWD/scripts/com.career-ops.scan-runner.plist" ~/Library/LaunchAgents/com.career-ops.scan-runner.plist
+launchctl load ~/Library/LaunchAgents/com.career-ops.scan-runner.plist
+launchctl list | grep career-ops        # verify it's registered
+
+# run once now (real — the warm scan SPENDS, budget-guarded to the FREE $5/cycle cap)
+launchctl start com.career-ops.scan-runner
+
+# dry-run the launcher (no spend, no notification, no session)
+./scripts/scan-runner.sh --dry-run
+
+# pause a date: add YYYY-MM-DD to scripts/scan-runner-skip-dates.txt
+# logs: data/scan-runner.log
+# uninstall
+launchctl unload ~/Library/LaunchAgents/com.career-ops.scan-runner.plist
+```
+
+Schedule is Monday 09:00 local (edit `StartCalendarInterval` in the plist to change). The warm scan
+refuses to spend when Apify monthly usage is near the FREE-plan cap (override via
+`warm_signals.budget_cap_usd` / `budget_margin_usd` in `portals.yml`).
+
 ## Dashboard TUI
 
 The built-in terminal dashboard lets you browse your pipeline visually:
