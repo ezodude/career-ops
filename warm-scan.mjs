@@ -211,6 +211,16 @@ async function main(argv) {
   if (keywords.length === 0) throw new Error('warm-scan: warm_signals.keywords is empty in portals.yml.');
 
   const ctx = makeHttpCtx();
+
+  // Budget pre-check BEFORE any paid fetch — deliberate skip (exit 0), not an error.
+  const budget = await checkBudget(ctx.fetchJson, token.trim(), config);
+  if (!budget.ok) {
+    const used = budget.usedUsd == null ? 'unknown' : `$${budget.usedUsd.toFixed(2)}`;
+    console.log(`budget guard: near/over cap or usage unavailable (used=${used}, est=$${estimateCost(config).toFixed(2)}) — skipping spend.`);
+    console.log('NEW_WARM=SKIPPED_BUDGET');
+    return;
+  }
+
   const raw = [];
   for (const kw of keywords) {
     console.log(`fetching: ${kw}`);
@@ -218,8 +228,11 @@ async function main(argv) {
     raw.push(...items);
   }
   const result = runWarmChain(raw, config);
-  appendToWarmLeads(result);
-  console.log(`warm leads: ${result.humans.length} human, ${result.aggregators.length} aggregator → ${WARM_LEADS_PATH}`);
+  const { addedHumans, addedAggregators } = appendToWarmLeads(result);
+  const today = new Date().toISOString().slice(0, 10);
+  appendToWarmDigest(addedHumans, today);
+  console.log(`warm leads: ${result.humans.length} human, ${result.aggregators.length} aggregator (${addedHumans.length} new human, ${addedAggregators.length} new aggregator) → ${WARM_LEADS_PATH}`);
+  console.log(`NEW_WARM=${addedHumans.length}`);
 }
 
 // Only run main() when executed directly — importing for tests must not fetch.
