@@ -1096,6 +1096,7 @@ async function main() {
     console.log(`Invalid (guarded):     ${invalidOffers.length} dropped`);
   }
   console.log(`New offers added:      ${verifiedOffers.length}`);
+  console.log(`NEW_OFFERS=${verifiedOffers.length}`);
 
   if (agentHandoff.length > 0) {
     console.log(`Agent/WebSearch handoff: ${agentHandoff.length} compan${agentHandoff.length === 1 ? 'y' : 'ies'} not handled by zero-token providers`);
