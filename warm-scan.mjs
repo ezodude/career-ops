@@ -82,17 +82,17 @@ export function formatWarmLead(record) {
   return `- [ ] ${url} | ${who}${tags ? `  ${tags}` : ''}`;
 }
 
-/** Insert rows under a `## Heading`, skipping URLs already present in the file. @param {string} text @param {string} heading @param {object[]} records @returns {string} */
+/** Insert rows under a `## Heading`, skipping URLs already present. @param {string} text @param {string} heading @param {object[]} records @returns {{text:string, added:object[]}} */
 function insertUnder(text, heading, records) {
   const idx = text.indexOf(heading);
-  if (idx === -1) return text;
+  if (idx === -1) return { text, added: [] };
   const afterHeading = idx + heading.length;
   const nextSection = text.indexOf('\n## ', afterHeading);
   const insertAt = nextSection === -1 ? text.length : nextSection;
-  const fresh = records.filter(r => r?.url && !text.includes(`${r.url} |`)).map(formatWarmLead);
-  if (fresh.length === 0) return text;
-  const block = '\n' + fresh.join('\n') + '\n';
-  return text.slice(0, insertAt) + block + text.slice(insertAt);
+  const added = records.filter(r => r?.url && !text.includes(`${r.url} |`));
+  if (added.length === 0) return { text, added: [] };
+  const block = '\n' + added.map(formatWarmLead).join('\n') + '\n';
+  return { text: text.slice(0, insertAt) + block + text.slice(insertAt), added };
 }
 
 /**
@@ -100,14 +100,15 @@ function insertUnder(text, heading, records) {
  * Auto-creates the file with a skeleton. Dedups on post URL already present. I/O boundary.
  * @param {{humans:object[], aggregators:object[]}} result
  * @param {string} [file]
- * @returns {void}
+ * @returns {{addedHumans:object[], addedAggregators:object[]}}
  */
 export function appendToWarmLeads(result, file = WARM_LEADS_PATH) {
   if (!_exists(file)) _write(file, WARM_SKELETON, 'utf-8');
   let text = _read(file, 'utf-8');
-  text = insertUnder(text, '## Warm leads', Array.isArray(result?.humans) ? result.humans : []);
-  text = insertUnder(text, '## Aggregators', Array.isArray(result?.aggregators) ? result.aggregators : []);
-  _write(file, text, 'utf-8');
+  const h = insertUnder(text, '## Warm leads', Array.isArray(result?.humans) ? result.humans : []);
+  const a = insertUnder(h.text, '## Aggregators', Array.isArray(result?.aggregators) ? result.aggregators : []);
+  _write(file, a.text, 'utf-8');
+  return { addedHumans: h.added, addedAggregators: a.added };
 }
 
 const APIFY_RESULT_COST_PER_1K = 5; // $5 / 1,000 results (pay-per-result)

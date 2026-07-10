@@ -4754,6 +4754,37 @@ console.log('\n30. Warm-signal discovery — CP-8');
     === '- [ ] https://x/y-ab12 | Jane — AI  [warm] [remote]' ? pass('formatWarmLead row') : fail('formatWarmLead row');
 }
 
+console.log('\n31. CP-10 scheduled runner + delivery');
+{
+  const { readFileSync, writeFileSync, existsSync, rmSync, mkdtempSync } = await import('fs');
+  const { tmpdir } = await import('os');
+  const {
+    appendToWarmLeads, isWithinBudget, appendToWarmDigest,
+  } = await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
+
+  const tmp = mkdtempSync(join(tmpdir(), 'cp10-'));
+  const leadsFile = join(tmp, 'warm-leads.md');
+  const humans = [
+    { url: 'https://ln/p/aaa', poster: { name: 'Ana', headline: 'AI lead' }, posterType: 'human', location: 'Remote (UK)' },
+    { url: 'https://ln/p/bbb', poster: { name: 'Ben', headline: 'CTO' }, posterType: 'human', location: 'London' },
+  ];
+  const aggregators = [
+    { url: 'https://ln/p/ccc', poster: { name: 'JobWharf' }, posterType: 'aggregator', location: 'UK' },
+  ];
+
+  // First append: everything is fresh.
+  const r1 = appendToWarmLeads({ humans, aggregators }, leadsFile);
+  (r1.addedHumans.length === 2 && r1.addedAggregators.length === 1)
+    ? pass('appendToWarmLeads returns fresh rows on first write') : fail(`appendToWarmLeads first write added ${r1.addedHumans.length}/${r1.addedAggregators.length}`);
+
+  // Second append of the SAME urls: dedup → nothing fresh.
+  const r2 = appendToWarmLeads({ humans, aggregators }, leadsFile);
+  (r2.addedHumans.length === 0 && r2.addedAggregators.length === 0)
+    ? pass('appendToWarmLeads returns empty on re-run (dedup)') : fail(`appendToWarmLeads re-run added ${r2.addedHumans.length}/${r2.addedAggregators.length}`);
+
+  rmSync(tmp, { recursive: true, force: true });
+}
+
 // ── SUMMARY ─────────────────────────────────────────────────────
 
 console.log('\n' + '='.repeat(50));
