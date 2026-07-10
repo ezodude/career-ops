@@ -4788,6 +4788,20 @@ console.log('\n31. CP-10 scheduled runner + delivery');
   isWithinBudget(4.5, 0.6, 5, 0.5) === false ? pass('isWithinBudget over cap') : fail('isWithinBudget over cap');
   isWithinBudget(NaN, 0.6, 5, 0.5) === false ? pass('isWithinBudget NaN usage → not within') : fail('isWithinBudget NaN guard');
 
+  // Digest: dated section, newest first, only new rows, no-op on empty.
+  const digestFile = join(tmp, 'warm-digest.md');
+  appendToWarmDigest([humans[0]], '2026-07-10', digestFile);
+  let dig = readFileSync(digestFile, 'utf-8');
+  (dig.includes('## 2026-07-10 (1 new)') && dig.includes('Ana')) ? pass('appendToWarmDigest writes dated section') : fail('appendToWarmDigest first section');
+
+  appendToWarmDigest([humans[1]], '2026-07-17', digestFile);
+  dig = readFileSync(digestFile, 'utf-8');
+  (dig.indexOf('2026-07-17') < dig.indexOf('2026-07-10')) ? pass('appendToWarmDigest newest section on top') : fail('appendToWarmDigest ordering');
+
+  const before = readFileSync(digestFile, 'utf-8');
+  appendToWarmDigest([], '2026-07-24', digestFile);
+  (readFileSync(digestFile, 'utf-8') === before) ? pass('appendToWarmDigest no-op on empty input') : fail('appendToWarmDigest empty no-op');
+
   rmSync(tmp, { recursive: true, force: true });
 }
 

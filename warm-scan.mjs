@@ -71,6 +71,8 @@ export function runWarmChain(rawItems, config) {
 
 const WARM_LEADS_PATH = 'data/warm-leads.md';
 const WARM_SKELETON = `# Warm leads — LinkedIn hiring posts\n\nOpt-in warm-signal discovery (CP-8). Run \`node warm-scan.mjs --spend\` to refresh.\n\n## Warm leads\n\n## Aggregators\n`;
+const WARM_DIGEST_PATH = 'data/warm-digest.md';
+const DIGEST_SKELETON = `# Warm digest — new leads per run\n\nNewest first. Written by warm-scan.mjs on each --spend run.\n`;
 
 /** Render one warm-leads markdown row. @param {object} record @returns {string} */
 export function formatWarmLead(record) {
@@ -109,6 +111,26 @@ export function appendToWarmLeads(result, file = WARM_LEADS_PATH) {
   const a = insertUnder(h.text, '## Aggregators', Array.isArray(result?.aggregators) ? result.aggregators : []);
   _write(file, a.text, 'utf-8');
   return { addedHumans: h.added, addedAggregators: a.added };
+}
+
+/**
+ * Prepend a dated section of NEW human warm leads to the digest (newest first).
+ * Auto-creates with a skeleton. No-op when there are no new humans. I/O boundary.
+ * @param {object[]} addedHumans
+ * @param {string} date  ISO date, e.g. '2026-07-10'
+ * @param {string} [file]
+ * @returns {void}
+ */
+export function appendToWarmDigest(addedHumans, date, file = WARM_DIGEST_PATH) {
+  const rows = Array.isArray(addedHumans) ? addedHumans : [];
+  if (rows.length === 0) return;
+  if (!_exists(file)) _write(file, DIGEST_SKELETON, 'utf-8');
+  const text = _read(file, 'utf-8');
+  const section = `\n## ${date} (${rows.length} new)\n\n` + rows.map(formatWarmLead).join('\n') + '\n';
+  // Insert directly after the skeleton header so the newest section sits on top of prior dated sections.
+  const marker = DIGEST_SKELETON;
+  const at = text.startsWith(marker) ? marker.length : (text.indexOf('\n\n') + 2 || text.length);
+  _write(file, text.slice(0, at) + section + text.slice(at), 'utf-8');
 }
 
 const APIFY_RESULT_COST_PER_1K = 5; // $5 / 1,000 results (pay-per-result)
