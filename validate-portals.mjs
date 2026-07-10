@@ -138,6 +138,8 @@ export async function validatePortalsConfig(config, { providerIds = new Set() } 
       if (w.keywords !== undefined) validateKeywordList(w.keywords, 'warm_signals.keywords', errors);
       if (w.aggregator_pages !== undefined) validateKeywordList(w.aggregator_pages, 'warm_signals.aggregator_pages', errors);
       if (w.jobseeker_signals !== undefined) validateKeywordList(w.jobseeker_signals, 'warm_signals.jobseeker_signals', errors);
+      if (w.budget_cap_usd !== undefined && (typeof w.budget_cap_usd !== 'number' || !Number.isFinite(w.budget_cap_usd) || w.budget_cap_usd <= 0)) add(errors, 'warm_signals.budget_cap_usd', 'must be a positive number');
+      if (w.budget_margin_usd !== undefined && (typeof w.budget_margin_usd !== 'number' || !Number.isFinite(w.budget_margin_usd) || w.budget_margin_usd < 0)) add(errors, 'warm_signals.budget_margin_usd', 'must be a non-negative number');
     }
   }
 

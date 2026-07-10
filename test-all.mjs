@@ -4802,6 +4802,12 @@ console.log('\n31. CP-10 scheduled runner + delivery');
   appendToWarmDigest([], '2026-07-24', digestFile);
   (readFileSync(digestFile, 'utf-8') === before) ? pass('appendToWarmDigest no-op on empty input') : fail('appendToWarmDigest empty no-op');
 
+  const { validatePortalsConfig } = await import(pathToFileURL(join(ROOT, 'validate-portals.mjs')).href);
+  const okRes = await validatePortalsConfig({ warm_signals: { actor: 'x/y', limit: 30, budget_cap_usd: 5, budget_margin_usd: 0.5 } });
+  (okRes.errors.length === 0) ? pass('validate-portals accepts budget_cap/margin numbers') : fail(`validate-portals rejected valid budget keys: ${JSON.stringify(okRes.errors)}`);
+  const badRes = await validatePortalsConfig({ warm_signals: { budget_cap_usd: 'lots' } });
+  (badRes.errors.some(e => /budget_cap_usd/.test(JSON.stringify(e)))) ? pass('validate-portals rejects non-number budget_cap_usd') : fail('validate-portals allowed bad budget_cap_usd');
+
   rmSync(tmp, { recursive: true, force: true });
 }
 
