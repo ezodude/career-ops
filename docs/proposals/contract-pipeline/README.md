@@ -33,6 +33,7 @@ No self-driven LinkedIn scraping anywhere in the routine loop. Job data comes fr
 | [CP-4](CP-4-reachability-scoring.md) | Reachability scoring from connections CSV | 1 | CP-1 | M | ▶ Next |
 | [CP-8](CP-8-network-first-discovery.md) | **Warm-signal discovery** (recruiter/dev hiring posts, reshaped) | 1 | CP-4 | L | ✅ Discovery adapter complete (live-verified) · reachability ranking → CP-4 |
 | [CP-10](CP-10-scheduled-scan-runner.md) | **Scheduled scan runner + delivery** (launchd weekly, both scans, auto-triage) | 1 | CP-8 | S–M | ✅ Shipped (live-verified 2026-07-13) |
+| [CP-11](CP-11-warm-signal-precision.md) | **Warm-signal precision** (Page/region/dedup filters + Gemini hiring-intent) | 1 | CP-8 | M | ✅ Shipped |
 | [CP-5](CP-5-contract-tracker-and-crm.md) | Contract-aware tracker + relationship CRM | 1 | CP-4 | L | ⏸ Deferred |
 | [CP-6](CP-6-reachability-view-and-bench.md) | Reachability view + bench/renewal alerts | 1 | CP-4, CP-5 | M | ⏸ Deferred |
 | [CP-7](CP-7-evaluation-scoring-upgrade.md) | Evaluation scoring upgrade (contract-fit + path-in) | 1 | CP-3 | M | ⏸ Deferred |
