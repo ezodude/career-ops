@@ -85,6 +85,30 @@ export function runWarmChain(rawItems, config) {
 
 export const DEFAULT_WARM_BLOCK = ['united states', 'usa', 'u.s.', 'w2', 'offshore', 'united arab emirates', 'uae', 'dubai', 'abu dhabi', 'gulf', 'middle east', 'ksa', 'saudi', 'qatar'];
 
+/** Work-arrangement words — not places. Stripped from a location before the country check so "remote" can never stand in for a region. */
+export const WORK_ARRANGEMENT = ['remote', 'hybrid', 'on-site', 'on site', 'onsite', 'wfh'];
+
+/** In-region tokens (UK + Ireland + Europe/EU/EEA + US), lowercase, word-boundary matched. Extendable via warm_signals.location_filter.allow. */
+export const ALLOWED_REGIONS = [
+  // UK
+  'united kingdom', 'uk', 'u.k.', 'great britain', 'britain', 'gb', 'england', 'scotland', 'wales', 'northern ireland',
+  'london', 'manchester', 'birmingham', 'leeds', 'glasgow', 'edinburgh', 'bristol', 'liverpool', 'sheffield', 'cardiff', 'belfast', 'nottingham', 'newcastle', 'cambridge', 'oxford', 'reading',
+  // Ireland
+  'ireland', 'republic of ireland', 'dublin',
+  // Europe (region words + EU/EEA country names)
+  'europe', 'european union', 'eu', 'eea', 'emea',
+  'germany', 'france', 'spain', 'italy', 'netherlands', 'belgium', 'luxembourg', 'portugal', 'poland', 'sweden', 'denmark', 'norway', 'finland', 'iceland', 'austria', 'switzerland', 'czechia', 'czech republic', 'slovakia', 'slovenia', 'hungary', 'romania', 'bulgaria', 'greece', 'croatia', 'estonia', 'latvia', 'lithuania', 'malta', 'cyprus',
+  // US
+  'united states', 'united states of america', 'usa', 'u.s.', 'u.s.a.', 'us', 'america',
+];
+
+/** Case-insensitive word-boundary containment: does `token` appear in `text` bounded by non-letters? So 'us' matches "remote (us)" but not "cyprus"/"belarus". Multi-word tokens match as a phrase. @param {string} text @param {string} token @returns {boolean} */
+export function regionTokenMatch(text, token) {
+  if (typeof text !== 'string' || typeof token !== 'string' || !token) return false;
+  const esc = token.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|[^a-z])${esc}(?:[^a-z]|$)`).test(text.toLowerCase());
+}
+
 /** Content signature for near-duplicate reposts: normalised first 100 chars of the post text (empty when no text → caller falls back to URL dedup). @param {{text?:string}} rec @returns {string} */
 export function dupeSignature(rec) {
   const t = (rec?.text || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();

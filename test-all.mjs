@@ -4892,6 +4892,26 @@ console.log('\n32. CP-11 warm-signal precision');
   badI.errors.some(e => /hiring_intent/.test(JSON.stringify(e))) ? pass('validate-portals rejects bad hiring_intent.enabled') : fail('validate-portals allowed bad hiring_intent');
 }
 
+console.log('\n33. CP-12 region-gate country precision');
+{
+  const { regionTokenMatch, ALLOWED_REGIONS, WORK_ARRANGEMENT } = await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
+
+  // word-boundary matching: 'us' matches "remote (us)" but NOT "cyprus"/"belarus"/"houston"
+  regionTokenMatch('remote (us)', 'us') === true ? pass('regionTokenMatch us bounded') : fail('regionTokenMatch us bounded');
+  regionTokenMatch('cyprus', 'us') === false ? pass('regionTokenMatch not cyprus') : fail('regionTokenMatch cyprus false-match');
+  regionTokenMatch('belarus', 'us') === false ? pass('regionTokenMatch not belarus') : fail('regionTokenMatch belarus false-match');
+  regionTokenMatch('houston, texas', 'us') === false ? pass('regionTokenMatch not houston') : fail('regionTokenMatch houston false-match');
+  regionTokenMatch('london, england, united kingdom', 'united kingdom') === true ? pass('regionTokenMatch multiword') : fail('regionTokenMatch multiword');
+  regionTokenMatch('remote (u.s.)', 'u.s.') === true ? pass('regionTokenMatch dotted') : fail('regionTokenMatch dotted');
+
+  // ALLOWED_REGIONS content: UK, US, and European country names present; work-arrangement words absent
+  (ALLOWED_REGIONS.includes('uk') && ALLOWED_REGIONS.includes('united kingdom') && ALLOWED_REGIONS.includes('manchester')) ? pass('ALLOWED_REGIONS UK') : fail('ALLOWED_REGIONS UK');
+  (ALLOWED_REGIONS.includes('united states') && ALLOWED_REGIONS.includes('usa') && ALLOWED_REGIONS.includes('us')) ? pass('ALLOWED_REGIONS US') : fail('ALLOWED_REGIONS US');
+  (ALLOWED_REGIONS.includes('germany') && ALLOWED_REGIONS.includes('cyprus') && ALLOWED_REGIONS.includes('europe')) ? pass('ALLOWED_REGIONS Europe') : fail('ALLOWED_REGIONS Europe');
+  ALLOWED_REGIONS.includes('remote') === false ? pass('ALLOWED_REGIONS excludes work-arrangement') : fail('ALLOWED_REGIONS has remote');
+  WORK_ARRANGEMENT.includes('remote') === true ? pass('WORK_ARRANGEMENT has remote') : fail('WORK_ARRANGEMENT remote');
+}
+
 // ── SUMMARY ─────────────────────────────────────────────────────
 
 console.log('\n' + '='.repeat(50));
