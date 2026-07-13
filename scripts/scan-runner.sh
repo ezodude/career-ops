@@ -4,6 +4,10 @@
 # Triggered by launchd (com.career-ops.scan-runner) Mon 09:00. Mirrors wayfinder/nurture-session.sh.
 set -uo pipefail
 
+# launchd starts with a minimal PATH that omits Homebrew, so `node` is not found.
+# Prepend the Homebrew (and Intel-brew) bin dirs so headless runs resolve node.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 DRY_RUN="${1:-}"
 
