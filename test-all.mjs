@@ -4870,6 +4870,20 @@ console.log('\n32. CP-11 warm-signal precision');
   ch.ambiguous.length === 1 ? pass('runWarmChain no-economics person→ambiguous (1)') : fail(`runWarmChain ambiguous ${ch.ambiguous.length}`);
   ch.aggregators.length === 1 ? pass('runWarmChain Page→aggregator (1)') : fail(`runWarmChain aggregators ${ch.aggregators.length}`);
   (ch.humans.some(h => h.poster.name === 'Gulf Person') === false && ch.ambiguous.some(h => h.poster.name === 'Gulf Person') === false) ? pass('runWarmChain drops Dubai') : fail('runWarmChain Dubai leaked');
+
+  const { buildHiringIntentPrompt, mergeHiringVerdicts } = await import(pathToFileURL(join(ROOT, 'hiring-intent.mjs')).href);
+
+  const prompt = buildHiringIntentPrompt({ text: 'We are hiring an AI Engineer', poster: { headline: 'Recruiter' } });
+  (prompt.includes('We are hiring an AI Engineer') && /json/i.test(prompt) && /hiring/i.test(prompt)) ? pass('buildHiringIntentPrompt shape') : fail('buildHiringIntentPrompt shape');
+
+  const amb = [
+    { poster: { name: 'A' }, url: 'u1' },
+    { poster: { name: 'B' }, url: 'u2' },
+    { poster: { name: 'C' }, url: 'u3' },
+  ];
+  const kept = mergeHiringVerdicts(amb, [{ hiring: true }, { hiring: false }, null]);
+  (kept.length === 2 && kept[0].poster.name === 'A' && kept[1].poster.name === 'C') ? pass('mergeHiringVerdicts keeps hiring+null, drops non-hiring') : fail(`mergeHiringVerdicts kept ${kept.map(k => k.poster.name)}`);
+  (Array.isArray(kept[1].extraTags) && kept[1].extraTags.includes('[intent?]')) ? pass('mergeHiringVerdicts flags null verdict') : fail('mergeHiringVerdicts flag');
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────
