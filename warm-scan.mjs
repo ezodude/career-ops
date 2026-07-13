@@ -8,6 +8,7 @@ import { pathToFileURL as _p } from 'url';
 import { readFileSync as _read, writeFileSync as _write, existsSync as _exists } from 'fs';
 import { makeHttpCtx } from './providers/_http.mjs';
 import yaml from 'js-yaml';
+import { makeGeminiClassifier, mergeHiringVerdicts, HIRING_INTENT_DEFAULT_MODEL } from './hiring-intent.mjs';
 
 const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
 const { mapApifyPost, fetchPosts, isPageProfile } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
@@ -249,10 +250,31 @@ async function main(argv) {
     raw.push(...items);
   }
   const result = runWarmChain(raw, config);
-  const { addedHumans, addedAggregators } = appendToWarmLeads(result);
+  const ambiguous = Array.isArray(result.ambiguous) ? result.ambiguous : [];
+  let confirmedFromAmbiguous = [];
+  if (ambiguous.length) {
+    const intentCfg = (config.hiring_intent && typeof config.hiring_intent === 'object') ? config.hiring_intent : {};
+    const key = process.env.GEMINI_API_KEY;
+    let verdicts;
+    if (intentCfg.enabled !== false && key && key.trim()) {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const classify = makeGeminiClassifier({ apiKey: key.trim(), model: intentCfg.model || HIRING_INTENT_DEFAULT_MODEL, GoogleGenerativeAI });
+      verdicts = [];
+      for (const p of ambiguous) {
+        try { verdicts.push(await classify(p)); }
+        catch (e) { console.log(`hiring-intent: classify error (${e.message}) — keeping flagged`); verdicts.push(null); }
+      }
+    } else {
+      verdicts = ambiguous.map(() => null); // no key / disabled → keep all, flagged
+    }
+    confirmedFromAmbiguous = mergeHiringVerdicts(ambiguous, verdicts);
+    console.log(`hiring-intent: ${confirmedFromAmbiguous.length}/${ambiguous.length} ambiguous kept, ${ambiguous.length - confirmedFromAmbiguous.length} dropped`);
+  }
+  const humans = [...result.humans, ...confirmedFromAmbiguous];
+  const { addedHumans, addedAggregators } = appendToWarmLeads({ humans, aggregators: result.aggregators });
   const today = new Date().toISOString().slice(0, 10);
   appendToWarmDigest(addedHumans, today);
-  console.log(`warm leads: ${result.humans.length} human, ${result.aggregators.length} aggregator (${addedHumans.length} new human, ${addedAggregators.length} new aggregator) → ${WARM_LEADS_PATH}`);
+  console.log(`warm leads: ${humans.length} human, ${result.aggregators.length} aggregator (${addedHumans.length} new human, ${addedAggregators.length} new aggregator) → ${WARM_LEADS_PATH}`);
   console.log(`NEW_WARM=${addedHumans.length}`);
 }
 

@@ -3,6 +3,9 @@
 // is ambiguous: is it an actual hiring post, or commentary / self-promotion / seeking work?
 // Deterministic filters run first (warm-scan.mjs); this only sees the residue.
 
+/** Default Gemini model for hiring-intent classification. gemini-2.5-flash is 404 for new API keys; 3.1-flash-lite is free-tier and sufficient for binary classification. @type {string} */
+export const HIRING_INTENT_DEFAULT_MODEL = 'gemini-3.1-flash-lite';
+
 /** Build the classifier prompt for one post (pure). @param {{text?:string, poster?:{headline?:string}}} post @returns {string} */
 export function buildHiringIntentPrompt(post) {
   const text = String(post?.text || '').slice(0, 1500);
@@ -38,7 +41,7 @@ export function mergeHiringVerdicts(ambiguous, verdicts) {
  * @param {{apiKey:string, model?:string, GoogleGenerativeAI:any}} opts
  * @returns {(post:object)=>Promise<{hiring:boolean, reason:string}>}
  */
-export function makeGeminiClassifier({ apiKey, model = 'gemini-2.5-flash', GoogleGenerativeAI }) {
+export function makeGeminiClassifier({ apiKey, model = HIRING_INTENT_DEFAULT_MODEL, GoogleGenerativeAI }) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const gm = genAI.getGenerativeModel({
     model,
