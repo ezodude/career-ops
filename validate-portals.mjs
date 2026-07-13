@@ -140,6 +140,15 @@ export async function validatePortalsConfig(config, { providerIds = new Set() } 
       if (w.jobseeker_signals !== undefined) validateKeywordList(w.jobseeker_signals, 'warm_signals.jobseeker_signals', errors);
       if (w.budget_cap_usd !== undefined && (typeof w.budget_cap_usd !== 'number' || !Number.isFinite(w.budget_cap_usd) || w.budget_cap_usd <= 0)) add(errors, 'warm_signals.budget_cap_usd', 'must be a positive number');
       if (w.budget_margin_usd !== undefined && (typeof w.budget_margin_usd !== 'number' || !Number.isFinite(w.budget_margin_usd) || w.budget_margin_usd < 0)) add(errors, 'warm_signals.budget_margin_usd', 'must be a non-negative number');
+      if (w.block_locations !== undefined) validateKeywordList(w.block_locations, 'warm_signals.block_locations', errors);
+      if (w.hiring_intent !== undefined) {
+        if (!isObject(w.hiring_intent)) {
+          add(errors, 'warm_signals.hiring_intent', 'must be an object');
+        } else {
+          if (w.hiring_intent.enabled !== undefined && typeof w.hiring_intent.enabled !== 'boolean') add(errors, 'warm_signals.hiring_intent.enabled', 'must be a boolean');
+          if (w.hiring_intent.model !== undefined && typeof w.hiring_intent.model !== 'string') add(errors, 'warm_signals.hiring_intent.model', 'must be a string');
+        }
+      }
     }
   }
 

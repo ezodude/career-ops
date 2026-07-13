@@ -4884,6 +4884,12 @@ console.log('\n32. CP-11 warm-signal precision');
   const kept = mergeHiringVerdicts(amb, [{ hiring: true }, { hiring: false }, null]);
   (kept.length === 2 && kept[0].poster.name === 'A' && kept[1].poster.name === 'C') ? pass('mergeHiringVerdicts keeps hiring+null, drops non-hiring') : fail(`mergeHiringVerdicts kept ${kept.map(k => k.poster.name)}`);
   (Array.isArray(kept[1].extraTags) && kept[1].extraTags.includes('[intent?]')) ? pass('mergeHiringVerdicts flags null verdict') : fail('mergeHiringVerdicts flag');
+
+  const { validatePortalsConfig } = await import(pathToFileURL(join(ROOT, 'validate-portals.mjs')).href);
+  const okI = await validatePortalsConfig({ warm_signals: { hiring_intent: { enabled: true, model: 'gemini-2.5-flash' }, block_locations: ['dubai'] } });
+  okI.errors.length === 0 ? pass('validate-portals accepts hiring_intent + block_locations') : fail(`validate-portals rejected: ${JSON.stringify(okI.errors)}`);
+  const badI = await validatePortalsConfig({ warm_signals: { hiring_intent: { enabled: 'yes' } } });
+  badI.errors.some(e => /hiring_intent/.test(JSON.stringify(e))) ? pass('validate-portals rejects bad hiring_intent.enabled') : fail('validate-portals allowed bad hiring_intent');
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────
