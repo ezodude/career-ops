@@ -4828,6 +4828,27 @@ console.log('\n31. CP-10 scheduled runner + delivery');
   rmSync(tmp, { recursive: true, force: true });
 }
 
+console.log('\n32. CP-11 warm-signal precision');
+{
+  const {
+    dupeSignature, DEFAULT_WARM_BLOCK, buildWarmTags, runWarmChain,
+  } = await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
+
+  // dupeSignature: same normalised text prefix → same signature; different → different; empty → ''.
+  const a = { text: 'Hiring an AI Engineer, outside IR35, London.' };
+  const b = { text: 'HIRING an AI Engineer,   outside IR35, London.' };
+  const c = { text: 'Completely different post about cats.' };
+  (dupeSignature(a) === dupeSignature(b) && dupeSignature(a) !== dupeSignature(c)) ? pass('dupeSignature normalises + separates') : fail('dupeSignature');
+  dupeSignature({ text: '' }) === '' ? pass('dupeSignature empty text') : fail('dupeSignature empty');
+
+  // Gulf terms in the default block list.
+  (DEFAULT_WARM_BLOCK.includes('dubai') && DEFAULT_WARM_BLOCK.includes('uae')) ? pass('DEFAULT_WARM_BLOCK has Gulf') : fail('DEFAULT_WARM_BLOCK Gulf');
+
+  // buildWarmTags renders extraTags at the end.
+  buildWarmTags({ posterType: 'human', location: 'Remote', extraTags: ['[intent?]'] }) === '[warm] [remote] [intent?]'
+    ? pass('buildWarmTags extraTags') : fail(`buildWarmTags extraTags got "${buildWarmTags({ posterType: 'human', location: 'Remote', extraTags: ['[intent?]'] })}"`);
+}
+
 // ── SUMMARY ─────────────────────────────────────────────────────
 
 console.log('\n' + '='.repeat(50));

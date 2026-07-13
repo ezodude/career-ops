@@ -29,7 +29,7 @@ export function classifyPosterType(name, aggregatorPages) {
   return matchers.some(m => m(lower)) ? 'aggregator' : 'human';
 }
 
-/** Triage tags for a warm-leads row: poster-type + region + optional IR35/day-rate. Emits NO [contract?] tag. @param {{posterType?:string,location?:string,text?:string,ir35?:string,dayRate?:string}} record @returns {string} */
+/** Triage tags for a warm-leads row: poster-type + region + optional IR35/day-rate. Emits NO [contract?] tag. @param {{posterType?:string,location?:string,text?:string,ir35?:string,dayRate?:string,extraTags?:string[]}} record @returns {string} */
 export function buildWarmTags(record) {
   const tags = [record?.posterType === 'aggregator' ? '[aggregator]' : '[warm]'];
   const loc = (record?.location || record?.text || '').toLowerCase();
@@ -38,6 +38,7 @@ export function buildWarmTags(record) {
   if (record?.ir35 === 'outside') tags.push('[outside IR35]');
   else if (record?.ir35 === 'inside') tags.push('[inside IR35]');
   if (record?.dayRate) tags.push(String(record.dayRate).replace(/\|/g, '/').replace(/[\r\n]/g, ' '));
+  if (Array.isArray(record?.extraTags)) tags.push(...record.extraTags.filter(t => typeof t === 'string' && t));
   return tags.join(' ');
 }
 
@@ -67,6 +68,14 @@ export function runWarmChain(rawItems, config) {
     (rec.posterType === 'aggregator' ? aggregators : humans).push(rec);
   }
   return { humans, aggregators };
+}
+
+export const DEFAULT_WARM_BLOCK = ['united states', 'usa', 'u.s.', 'w2', 'offshore', 'united arab emirates', 'uae', 'dubai', 'abu dhabi', 'gulf', 'middle east', 'ksa', 'saudi', 'qatar'];
+
+/** Content signature for near-duplicate reposts: normalised first 100 chars of the post text (empty when no text → caller falls back to URL dedup). @param {{text?:string}} rec @returns {string} */
+export function dupeSignature(rec) {
+  const t = (rec?.text || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
+  return t ? t.slice(0, 100) : '';
 }
 
 const WARM_LEADS_PATH = 'data/warm-leads.md';
@@ -178,7 +187,7 @@ function loadWarmConfig(portalsPath) {
   const cfg = /** @type {any} */ (yaml.load(_read(portalsPath, 'utf-8')) || {});
   const warm = (cfg.warm_signals && typeof cfg.warm_signals === 'object') ? cfg.warm_signals : {};
   const base = (cfg.location_filter && typeof cfg.location_filter === 'object') ? cfg.location_filter : {};
-  const defaultBlock = ['united states', 'usa', 'u.s.', 'w2', 'offshore'];
+  const defaultBlock = DEFAULT_WARM_BLOCK;
   const warmBlock = Array.isArray(warm.block_locations) ? warm.block_locations : defaultBlock;
   const location_filter = { ...base, block: [...(Array.isArray(base.block) ? base.block : []), ...warmBlock] };
   // budget_cap_usd / budget_margin_usd (if set on warm_signals) pass through via ...warm; defaults live in checkBudget.
