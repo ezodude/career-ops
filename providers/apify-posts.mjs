@@ -70,6 +70,9 @@ export async function fetchPosts(actor, keyword, { token, limit = 30, fetchJson,
   return Array.isArray(res) ? res : [];
 }
 
+/** NFKC-normalise so styled unicode (bold/italic math letters) collapses to ASCII before regex. @param {unknown} s @returns {string} */
+function nfkc(s) { return typeof s === 'string' ? s.normalize('NFKC') : ''; }
+
 /**
  * Normalise one raw Apify posts-search item into a warm-post record.
  * `posterType` is left undefined here — the classify stage (warm-scan.mjs) sets it.
@@ -79,11 +82,11 @@ export async function fetchPosts(actor, keyword, { token, limit = 30, fetchJson,
 export function mapApifyPost(raw) {
   if (!raw || typeof raw !== 'object') raw = {};
   const a = (raw && typeof raw.author === 'object' && raw.author) ? raw.author : {};
-  const text = typeof raw.text === 'string' ? raw.text : '';
+  const text = nfkc(typeof raw.text === 'string' ? raw.text : '');
   return {
     poster: {
       name: typeof a.name === 'string' ? a.name.trim() : '',
-      headline: typeof a.headline === 'string' ? a.headline.trim() : '',
+      headline: nfkc(a.headline).trim(),
       url: typeof a.profile_url === 'string' ? a.profile_url.trim() : '',
       followers: Number.isFinite(a.followers) ? a.followers : undefined,
     },
@@ -91,7 +94,7 @@ export function mapApifyPost(raw) {
     text,
     dayRate: parseDayRate(text),
     ir35: parseIr35(text),
-    location: typeof a.location === 'string' ? a.location.trim() : '',
+    location: nfkc(a.location).trim(),
     url: cleanPostUrl(raw.post_url ?? raw.url),
     postedAt: toEpochMs(raw.posted_at?.timestamp ?? raw.posted_at ?? raw.postedAt),
     reactions: reactionCount(raw.stats ?? raw.reactions),

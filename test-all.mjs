@@ -4725,6 +4725,12 @@ console.log('\n30. Warm-signal discovery — CP-8');
   r0.location === '' ? pass('mapApifyPost real actor: no author.location → empty string') : fail(`mapApifyPost real actor location unexpectedly '${r0.location}'`);
   (r0.url !== '' && typeof r0.reactions === 'number' && typeof r0.postedAt === 'number') ? pass('mapApifyPost real contract fields (post_url, stats, posted_at.timestamp)') : fail(`mapApifyPost real contract: url='${r0.url}' reactions=${r0.reactions} postedAt=${r0.postedAt}`);
 
+  // Unicode-bold (mathematical) styling must NFKC-collapse before IR35/rate parsing.
+  const uni = mapApifyPost({ author: { name: 'X', headline: '𝟯𝟳 followers', profile_url: 'https://x/u' }, text: '𝗠𝗶𝗱 𝗔𝗜 𝗘𝗻𝗴𝗶𝗻𝗲𝗲𝗿 𝗢𝘂𝘁𝘀𝗶𝗱𝗲 𝗜𝗥𝟯𝟱 400/day', url: 'https://ln/p/uni', posted_at: '2026-07-10T00:00:00Z' });
+  uni.ir35 === 'outside' ? pass('mapApifyPost NFKC → parseIr35') : fail(`mapApifyPost NFKC ir35 got ${uni.ir35}`);
+  uni.dayRate === '£400/day' ? pass('mapApifyPost NFKC → parseDayRate') : fail(`mapApifyPost NFKC rate got ${uni.dayRate}`);
+  uni.poster.headline === '37 followers' ? pass('mapApifyPost NFKC headline') : fail(`mapApifyPost NFKC headline got ${uni.poster.headline}`);
+
   // Filters / classify
   isJobSeeker('#OpenToWork seeking contract', ['seeking contract']) === true ? pass('isJobSeeker drop') : fail('isJobSeeker drop');
   classifyPosterType('JobWharf', ['JobWharf']) === 'aggregator' ? pass('classifyPosterType aggregator') : fail('classifyPosterType aggregator');
