@@ -4910,6 +4910,30 @@ console.log('\n33. CP-12 region-gate country precision');
   (ALLOWED_REGIONS.includes('germany') && ALLOWED_REGIONS.includes('cyprus') && ALLOWED_REGIONS.includes('europe')) ? pass('ALLOWED_REGIONS Europe') : fail('ALLOWED_REGIONS Europe');
   ALLOWED_REGIONS.includes('remote') === false ? pass('ALLOWED_REGIONS excludes work-arrangement') : fail('ALLOWED_REGIONS has remote');
   WORK_ARRANGEMENT.includes('remote') === true ? pass('WORK_ARRANGEMENT has remote') : fail('WORK_ARRANGEMENT remote');
+
+  const { buildWarmRegionFilter } = await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
+  const pass_ = buildWarmRegionFilter({});   // defaults only
+  const cases = [
+    ['Remote (India)', false], ['Bengaluru, Karnataka, India', false], ['Dubai, UAE', false], ['Remote (Brazil)', false],
+    ['Remote (US)', true], ['San Francisco, United States', true],
+    ['London, England, United Kingdom', true], ['Remote (Germany)', true], ['Manchester', true], ['Cyprus', true],
+    ['Remote', true], ['Hybrid', true], ['', true], ['   ', true],
+  ];
+  let regionOk = true;
+  for (const [loc, want] of cases) if (pass_(loc) !== want) { regionOk = false; fail(`buildWarmRegionFilter("${loc}") expected ${want} got ${pass_(loc)}`); }
+  if (regionOk) pass('buildWarmRegionFilter worked-examples table');
+
+  // config.location_filter.allow EXTENDS the defaults (does not replace)
+  const extended = buildWarmRegionFilter({ location_filter: { allow: ['singapore'] } });
+  (extended('Remote (Singapore)') === true && extended('Remote (India)') === false) ? pass('buildWarmRegionFilter allow extends') : fail('buildWarmRegionFilter allow extend');
+
+  // a config allow that contains a work-arrangement word must NOT re-open the bug (allow-check runs on the stripped residue)
+  const withRemoteAllow = buildWarmRegionFilter({ location_filter: { allow: ['remote'] } });
+  withRemoteAllow('Remote (India)') === false ? pass('buildWarmRegionFilter remote-in-allow inert') : fail('buildWarmRegionFilter remote-in-allow re-opened bug');
+
+  // block_locations is a manual override veto (wins over allow)
+  const blocked = buildWarmRegionFilter({ block_locations: ['london'] });
+  (blocked('London, United Kingdom') === false && blocked('Manchester') === true) ? pass('buildWarmRegionFilter block override') : fail('buildWarmRegionFilter block override');
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────

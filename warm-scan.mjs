@@ -109,6 +109,33 @@ export function regionTokenMatch(text, token) {
   return new RegExp(`(?:^|[^a-z])${esc}(?:[^a-z]|$)`).test(text.toLowerCase());
 }
 
+/** Lowercase+trim a config string-list (non-strings dropped). @param {unknown} v @returns {string[]} */
+function _normRegionList(v) {
+  return (Array.isArray(v) ? v : []).filter(x => typeof x === 'string').map(x => x.toLowerCase().trim()).filter(Boolean);
+}
+
+/**
+ * Warm-only region gate (strict allow-only), judged on the poster's location ALONE.
+ * block_locations override → veto; strip work-arrangement words; empty residue → pass (no geo signal);
+ * residue matches an allowed region → pass; else → veto. The allow-check runs on the work-arrangement-stripped
+ * residue, so a "remote" in the allow list (or the location) can never rescue a foreign country.
+ * @param {{location_filter?:{allow?:string[]}, block_locations?:string[]}} config
+ * @returns {(location:string)=>boolean}
+ */
+export function buildWarmRegionFilter(config) {
+  const allow = [...ALLOWED_REGIONS, ..._normRegionList(config?.location_filter?.allow)];
+  const block = _normRegionList(config?.block_locations);
+  return (location) => {
+    if (typeof location !== 'string' || !location.trim()) return true;   // no geo signal
+    const lower = location.toLowerCase();
+    if (block.some(t => regionTokenMatch(lower, t))) return false;        // explicit manual override
+    let residue = lower;
+    for (const w of WORK_ARRANGEMENT) residue = residue.split(w).join(' ');
+    if (!residue.replace(/[^a-z]+/g, ' ').trim()) return true;            // only work-arrangement / punctuation → no geo signal
+    return allow.some(t => regionTokenMatch(residue, t));                 // country must be allowed
+  };
+}
+
 /** Content signature for near-duplicate reposts: normalised first 100 chars of the post text (empty when no text → caller falls back to URL dedup). @param {{text?:string}} rec @returns {string} */
 export function dupeSignature(rec) {
   const t = (rec?.text || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
