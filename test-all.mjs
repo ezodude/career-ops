@@ -4700,7 +4700,7 @@ try {
 console.log('\n30. Warm-signal discovery — CP-8');
 {
   const { readFileSync } = await import('fs');
-  const { mapApifyPost, parseDayRate, parseIr35 } = await import(pathToFileURL(join(ROOT, 'providers/apify-posts.mjs')).href);
+  const { mapApifyPost, parseDayRate, parseIr35, isPageProfile } = await import(pathToFileURL(join(ROOT, 'providers/apify-posts.mjs')).href);
   const { isJobSeeker, classifyPosterType, buildWarmTags, runWarmChain, estimateCost, formatWarmLead } =
     await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
   const raw = JSON.parse(readFileSync(join(ROOT, 'fixtures/apify-linkedin-posts-sample.json'), 'utf-8'));
@@ -4763,6 +4763,12 @@ console.log('\n30. Warm-signal discovery — CP-8');
   estimateCost({ keywords: ['a', 'b'], limit: 30 }) === 0.3 ? pass('estimateCost 2×30') : fail('estimateCost');
   formatWarmLead({ poster: { name: 'Jane', headline: 'AI' }, url: 'https://x/y-ab12', posterType: 'human', location: 'Remote' })
     === '- [ ] https://x/y-ab12 | Jane — AI  [warm] [remote]' ? pass('formatWarmLead row') : fail('formatWarmLead row');
+
+  isPageProfile('37 followers') === true ? pass('isPageProfile followers') : fail('isPageProfile followers');
+  isPageProfile('1,853 followers') === true ? pass('isPageProfile comma followers') : fail('isPageProfile comma followers');
+  isPageProfile('1 follower') === true ? pass('isPageProfile singular') : fail('isPageProfile singular');
+  isPageProfile('Principal AI Agent Engineer') === false ? pass('isPageProfile real headline') : fail('isPageProfile real headline');
+  isPageProfile('') === false ? pass('isPageProfile empty') : fail('isPageProfile empty');
 }
 
 console.log('\n31. CP-10 scheduled runner + delivery');

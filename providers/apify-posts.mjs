@@ -11,6 +11,11 @@ export function parseDayRate(text) {
   return `£${m[1].replace(/\s+/g, '')}/day`;
 }
 
+/** A LinkedIn *Page* (brand/company/aggregator) shows a bare follower count where a person shows a job title. @param {string} headline @returns {boolean} */
+export function isPageProfile(headline) {
+  return typeof headline === 'string' && /^\s*[\d,]+\s+followers?\s*$/i.test(headline);
+}
+
 /** Detect IR35 status from free text. @param {string} text @returns {('outside'|'inside'|undefined)} */
 export function parseIr35(text) {
   if (typeof text !== 'string') return undefined;
