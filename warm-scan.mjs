@@ -82,7 +82,6 @@ export function runWarmChain(rawItems, config) {
   return { humans, aggregators, ambiguous };
 }
 
-export const DEFAULT_WARM_BLOCK = ['united states', 'usa', 'u.s.', 'w2', 'offshore', 'united arab emirates', 'uae', 'dubai', 'abu dhabi', 'gulf', 'middle east', 'ksa', 'saudi', 'qatar'];
 
 /** Work-arrangement words — not places. Stripped from a location before the country check so "remote" can never stand in for a region. */
 export const WORK_ARRANGEMENT = ['remote', 'hybrid', 'on-site', 'on site', 'onsite', 'wfh'];
@@ -245,16 +244,13 @@ export async function checkBudget(fetchJson, token, config) {
   }
 }
 
-/** Load portals.yml → warm config with an effective location_filter (user allow list + a warm-specific block list). @param {string} portalsPath @returns {any} */
+/** Load portals.yml → warm config with an effective location_filter. block_locations (opt-in override) flows through via warm_signals; no default block list is applied. @param {string} portalsPath @returns {any} */
 function loadWarmConfig(portalsPath) {
   const cfg = /** @type {any} */ (yaml.load(_read(portalsPath, 'utf-8')) || {});
   const warm = (cfg.warm_signals && typeof cfg.warm_signals === 'object') ? cfg.warm_signals : {};
   const base = (cfg.location_filter && typeof cfg.location_filter === 'object') ? cfg.location_filter : {};
-  const defaultBlock = DEFAULT_WARM_BLOCK;
-  const warmBlock = Array.isArray(warm.block_locations) ? warm.block_locations : defaultBlock;
-  const location_filter = { ...base, block: [...(Array.isArray(base.block) ? base.block : []), ...warmBlock] };
   // budget_cap_usd / budget_margin_usd (if set on warm_signals) pass through via ...warm; defaults live in checkBudget.
-  return { ...warm, location_filter };
+  return { ...warm, location_filter: base };
 }
 
 /**

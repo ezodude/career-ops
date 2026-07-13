@@ -4831,7 +4831,7 @@ console.log('\n31. CP-10 scheduled runner + delivery');
 console.log('\n32. CP-11 warm-signal precision');
 {
   const {
-    dupeSignature, DEFAULT_WARM_BLOCK, buildWarmTags, runWarmChain,
+    dupeSignature, buildWarmTags, runWarmChain,
   } = await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
 
   // dupeSignature: same normalised text prefix → same signature; different → different; empty → ''.
@@ -4841,15 +4841,12 @@ console.log('\n32. CP-11 warm-signal precision');
   (dupeSignature(a) === dupeSignature(b) && dupeSignature(a) !== dupeSignature(c)) ? pass('dupeSignature normalises + separates') : fail('dupeSignature');
   dupeSignature({ text: '' }) === '' ? pass('dupeSignature empty text') : fail('dupeSignature empty');
 
-  // Gulf terms in the default block list.
-  (DEFAULT_WARM_BLOCK.includes('dubai') && DEFAULT_WARM_BLOCK.includes('uae')) ? pass('DEFAULT_WARM_BLOCK has Gulf') : fail('DEFAULT_WARM_BLOCK Gulf');
-
   // buildWarmTags renders extraTags at the end.
   buildWarmTags({ posterType: 'human', location: 'Remote', extraTags: ['[intent?]'] }) === '[warm] [remote] [intent?]'
     ? pass('buildWarmTags extraTags') : fail(`buildWarmTags extraTags got "${buildWarmTags({ posterType: 'human', location: 'Remote', extraTags: ['[intent?]'] })}"`);
 
   const cfg32 = {
-    location_filter: { allow: ['united kingdom', 'london', 'remote', 'uk'], block: DEFAULT_WARM_BLOCK },
+    location_filter: { allow: ['united kingdom', 'london', 'uk'] },
     aggregator_pages: ['JobWharf'],
     jobseeker_signals: ['open to work'],
   };
