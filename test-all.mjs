@@ -4749,15 +4749,15 @@ console.log('\n30. Warm-signal discovery — CP-8');
     jobseeker_signals: ['open to work', 'opentowork', 'seeking contract', 'available for'],
   };
   const chain = runWarmChain(raw, cfg);
-  chain.humans.length === 2 ? pass('runWarmChain keeps 2 humans') : fail(`runWarmChain humans ${chain.humans.length}`);
+  (chain.humans.length + chain.ambiguous.length) === 2 ? pass('runWarmChain keeps 2 persons (humans+ambiguous)') : fail(`runWarmChain persons ${chain.humans.length}+${chain.ambiguous.length}`);
   chain.aggregators.length === 1 ? pass('runWarmChain keeps 1 aggregator') : fail(`runWarmChain aggregators ${chain.aggregators.length}`);
-  chain.humans.some(h => h.poster.name === 'Pat Staffing') === false ? pass('runWarmChain drops US-only') : fail('runWarmChain US-only leaked');
-  chain.humans.some(h => h.poster.name === 'Chris Seeker') === false ? pass('runWarmChain drops job-seeker') : fail('runWarmChain job-seeker leaked');
+  [...chain.humans, ...chain.ambiguous].some(h => h.poster.name === 'Pat Staffing') === false ? pass('runWarmChain drops US-only') : fail('runWarmChain US-only leaked');
+  [...chain.humans, ...chain.ambiguous].some(h => h.poster.name === 'Chris Seeker') === false ? pass('runWarmChain drops job-seeker') : fail('runWarmChain job-seeker leaked');
 
   // Region gate must veto a US-location post even when its text contains an allow-word ('remote').
   const usItem = [{ author: { name: 'US Co', headline: 'Recruiter', profile_url: 'https://x/us', location: 'San Francisco, United States' }, text: 'AI Engineer, fully remote, £600/day outside IR35', url: 'https://ln.co/posts/us-zz99', posted_at: '2026-07-08T00:00:00Z', reactions: { total: 1 } }];
   const usChain = runWarmChain(usItem, cfg);
-  (usChain.humans.length === 0 && usChain.aggregators.length === 0) ? pass('runWarmChain vetoes US-location despite remote in text') : fail('runWarmChain US-location leaked via text allow-word');
+  (usChain.humans.length === 0 && usChain.aggregators.length === 0 && usChain.ambiguous.length === 0) ? pass('runWarmChain vetoes US-location despite remote in text') : fail('runWarmChain US-location leaked via text allow-word');
 
   // Cost + row format
   estimateCost({ keywords: ['a', 'b'], limit: 30 }) === 0.3 ? pass('estimateCost 2×30') : fail('estimateCost');
@@ -4847,6 +4847,29 @@ console.log('\n32. CP-11 warm-signal precision');
   // buildWarmTags renders extraTags at the end.
   buildWarmTags({ posterType: 'human', location: 'Remote', extraTags: ['[intent?]'] }) === '[warm] [remote] [intent?]'
     ? pass('buildWarmTags extraTags') : fail(`buildWarmTags extraTags got "${buildWarmTags({ posterType: 'human', location: 'Remote', extraTags: ['[intent?]'] })}"`);
+
+  const cfg32 = {
+    location_filter: { allow: ['united kingdom', 'london', 'remote', 'uk'], block: DEFAULT_WARM_BLOCK },
+    aggregator_pages: ['JobWharf'],
+    jobseeker_signals: ['open to work'],
+  };
+  const rows = [
+    // economics-confirmed human → humans
+    { author: { name: 'Real Recruiter', headline: 'Talent Partner', profile_url: 'https://x/r1', location: 'London' }, text: 'Hiring AI Engineer, outside IR35, £600/day', url: 'https://ln/p/h1', posted_at: '2026-07-10T00:00:00Z' },
+    // person, in-region, NO economics → ambiguous
+    { author: { name: 'Opinion Person', headline: 'Principal AI Engineer', profile_url: 'https://x/o1', location: 'London' }, text: 'Thoughts on the AI engineer market and recruitment funnels.', url: 'https://ln/p/a1', posted_at: '2026-07-10T00:00:00Z' },
+    // Page (follower-count headline) → aggregators
+    { author: { name: 'Brandy Co', headline: '37 followers', profile_url: 'https://x/b1', location: 'UK' }, text: 'We repost AI jobs, outside IR35', url: 'https://ln/p/g1', posted_at: '2026-07-10T00:00:00Z' },
+    // off-region (Dubai) → dropped
+    { author: { name: 'Gulf Person', headline: 'Recruiter', profile_url: 'https://x/d1', location: 'Dubai, UAE' }, text: 'AI Engineer role, remote, outside IR35', url: 'https://ln/p/d1', posted_at: '2026-07-10T00:00:00Z' },
+    // near-duplicate of h1's text via a different URL/name → deduped (kept once)
+    { author: { name: 'Sockpuppet', headline: 'Sourcer', profile_url: 'https://x/s1', location: 'London' }, text: 'Hiring AI Engineer, outside IR35, £600/day', url: 'https://ln/p/dup1', posted_at: '2026-07-10T00:00:00Z' },
+  ];
+  const ch = runWarmChain(rows, cfg32);
+  ch.humans.length === 1 ? pass('runWarmChain economics→humans (1)') : fail(`runWarmChain humans ${ch.humans.length}`);
+  ch.ambiguous.length === 1 ? pass('runWarmChain no-economics person→ambiguous (1)') : fail(`runWarmChain ambiguous ${ch.ambiguous.length}`);
+  ch.aggregators.length === 1 ? pass('runWarmChain Page→aggregator (1)') : fail(`runWarmChain aggregators ${ch.aggregators.length}`);
+  (ch.humans.some(h => h.poster.name === 'Gulf Person') === false && ch.ambiguous.some(h => h.poster.name === 'Gulf Person') === false) ? pass('runWarmChain drops Dubai') : fail('runWarmChain Dubai leaked');
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ import { makeHttpCtx } from './providers/_http.mjs';
 import yaml from 'js-yaml';
 
 const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
-const { mapApifyPost, fetchPosts } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
+const { mapApifyPost, fetchPosts, isPageProfile } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
 
 /** True when post text matches any job-seeker signal (wrong direction — drop). @param {string} text @param {string[]} signals @returns {boolean} */
 export function isJobSeeker(text, signals) {
@@ -43,31 +43,43 @@ export function buildWarmTags(record) {
 }
 
 /**
- * Pure discovery pipeline: raw actor items → categorised warm records.
- * normalise → drop job-seekers → region gate → classify poster-type → dedup on cleaned URL.
+ * Pure discovery pipeline → categorised warm records. Order (first veto wins):
+ * NFKC (done in mapApifyPost) → URL dedup → job-seeker drop → region gate → near-dup dedup →
+ * Page→aggregator → pattern→aggregator → economics→humans → else→ambiguous.
  * @param {Record<string, any>[]} rawItems
  * @param {{location_filter?:object, aggregator_pages?:string[], jobseeker_signals?:string[]}} config
- * @returns {{humans:object[], aggregators:object[]}}
+ * @returns {{humans:object[], aggregators:object[], ambiguous:object[]}}
  */
 export function runWarmChain(rawItems, config) {
   const passesRegion = buildLocationFilter(config?.location_filter);
   const seekerSignals = Array.isArray(config?.jobseeker_signals) ? config.jobseeker_signals : [];
   const aggPages = Array.isArray(config?.aggregator_pages) ? config.aggregator_pages : [];
-  const seen = new Set();
+  const seenUrl = new Set();
+  const seenSig = new Set();
   const humans = [];
   const aggregators = [];
+  const ambiguous = [];
   for (const raw of Array.isArray(rawItems) ? rawItems : []) {
     const rec = mapApifyPost(raw);
-    if (!rec.url || seen.has(rec.url)) continue;           // dedup on cleaned URL
-    if (isJobSeeker(rec.text, seekerSignals)) continue;    // wrong direction
-    // Region gate over combined location+text — a block hit anywhere vetoes.
-    const region = `${rec.location} ${rec.text}`.trim();
+    if (!rec.url || seenUrl.has(rec.url)) continue;            // URL dedup
+    if (isJobSeeker(rec.text, seekerSignals)) continue;       // wrong direction
+    const region = `${rec.location} ${rec.text}`.trim();       // combined region gate: block-term anywhere → veto; else an allow-word in text can rescue a non-blocked location
     if (!passesRegion(region)) continue;
-    seen.add(rec.url);
+    const sig = dupeSignature(rec);                            // near-dup dedup
+    if (sig && seenSig.has(sig)) continue;
+    seenUrl.add(rec.url);
+    if (sig) seenSig.add(sig);
+    if (isPageProfile(rec.poster?.headline ?? '')) {           // Page → aggregator
+      rec.posterType = 'aggregator';
+      aggregators.push(rec);
+      continue;
+    }
     rec.posterType = classifyPosterType(rec.poster?.name ?? '', aggPages);
-    (rec.posterType === 'aggregator' ? aggregators : humans).push(rec);
+    if (rec.posterType === 'aggregator') { aggregators.push(rec); continue; }
+    if (rec.ir35 || rec.dayRate) humans.push(rec);             // economics → confirmed hiring
+    else ambiguous.push(rec);                                  // person, no economics → needs classify
   }
-  return { humans, aggregators };
+  return { humans, aggregators, ambiguous };
 }
 
 export const DEFAULT_WARM_BLOCK = ['united states', 'usa', 'u.s.', 'w2', 'offshore', 'united arab emirates', 'uae', 'dubai', 'abu dhabi', 'gulf', 'middle east', 'ksa', 'saudi', 'qatar'];
