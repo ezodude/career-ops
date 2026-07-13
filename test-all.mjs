@@ -4906,12 +4906,14 @@ console.log('\n33. CP-12 region-gate country precision');
   (ALLOWED_REGIONS.includes('united states') && ALLOWED_REGIONS.includes('usa') && ALLOWED_REGIONS.includes('us')) ? pass('ALLOWED_REGIONS US') : fail('ALLOWED_REGIONS US');
   (ALLOWED_REGIONS.includes('germany') && ALLOWED_REGIONS.includes('cyprus') && ALLOWED_REGIONS.includes('europe')) ? pass('ALLOWED_REGIONS Europe') : fail('ALLOWED_REGIONS Europe');
   ALLOWED_REGIONS.includes('remote') === false ? pass('ALLOWED_REGIONS excludes work-arrangement') : fail('ALLOWED_REGIONS has remote');
+  ALLOWED_REGIONS.includes('america') === false ? pass('ALLOWED_REGIONS excludes bare america (latin/south america)') : fail('ALLOWED_REGIONS has bare america');
   WORK_ARRANGEMENT.includes('remote') === true ? pass('WORK_ARRANGEMENT has remote') : fail('WORK_ARRANGEMENT remote');
 
   const { buildWarmRegionFilter } = await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
   const pass_ = buildWarmRegionFilter({});   // defaults only
   const cases = [
     ['Remote (India)', false], ['Bengaluru, Karnataka, India', false], ['Dubai, UAE', false], ['Remote (Brazil)', false],
+    ['Remote (Latin America)', false], ['South America', false],   // bare 'america' token must NOT rescue these
     ['Remote (US)', true], ['San Francisco, United States', true],
     ['London, England, United Kingdom', true], ['Remote (Germany)', true], ['Manchester', true], ['Cyprus', true],
     ['Remote', true], ['Hybrid', true], ['', true], ['   ', true],

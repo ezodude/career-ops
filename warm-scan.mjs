@@ -97,7 +97,7 @@ export const ALLOWED_REGIONS = [
   'europe', 'european union', 'eu', 'eea', 'emea',
   'germany', 'france', 'spain', 'italy', 'netherlands', 'belgium', 'luxembourg', 'portugal', 'poland', 'sweden', 'denmark', 'norway', 'finland', 'iceland', 'austria', 'switzerland', 'czechia', 'czech republic', 'slovakia', 'slovenia', 'hungary', 'romania', 'bulgaria', 'greece', 'croatia', 'estonia', 'latvia', 'lithuania', 'malta', 'cyprus',
   // US
-  'united states', 'united states of america', 'usa', 'u.s.', 'u.s.a.', 'us', 'america',
+  'united states', 'united states of america', 'usa', 'u.s.', 'u.s.a.', 'us',
 ];
 
 /** Case-insensitive word-boundary containment: does `token` appear in `text` bounded by non-letters? So 'us' matches "remote (us)" but not "cyprus"/"belarus". Multi-word tokens match as a phrase. @param {string} text @param {string} token @returns {boolean} */
