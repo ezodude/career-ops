@@ -5,7 +5,7 @@
 /** Parse a UK day rate from free text, always normalised to "£<amount>/day" (e.g. "£600 per day" → "£600/day", "£450–500/day" → "£450–500/day"). @param {string} text @returns {string|undefined} */
 export function parseDayRate(text) {
   if (typeof text !== 'string') return undefined;
-  const m = text.match(/£\s?(\d[\d,]*(?:\s?[–-]\s?£?\s?\d[\d,]*)?)\s?(?:\/|per\s?)\s?day/i);
+  const m = text.match(/(?<!\d)£?\s?(\d{1,4}(?:,\d{3})*(?:\s?[–-]\s?£?\s?\d{1,4}(?:,\d{3})*)?)\s?(?:\/|per\s?)\s?day\b/i);
   if (!m) return undefined;
   // Normalise the captured amount (strip stray whitespace) and re-attach a canonical "/day".
   return `£${m[1].replace(/\s+/g, '')}/day`;
