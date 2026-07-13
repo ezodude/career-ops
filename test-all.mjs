@@ -4749,15 +4749,15 @@ console.log('\n30. Warm-signal discovery — CP-8');
     jobseeker_signals: ['open to work', 'opentowork', 'seeking contract', 'available for'],
   };
   const chain = runWarmChain(raw, cfg);
-  (chain.humans.length + chain.ambiguous.length) === 2 ? pass('runWarmChain keeps 2 persons (humans+ambiguous)') : fail(`runWarmChain persons ${chain.humans.length}+${chain.ambiguous.length}`);
+  (chain.humans.length + chain.ambiguous.length) === 3 ? pass('runWarmChain keeps 3 persons (US recruiter now in-region)') : fail(`runWarmChain persons ${chain.humans.length}+${chain.ambiguous.length}`);
   chain.aggregators.length === 1 ? pass('runWarmChain keeps 1 aggregator') : fail(`runWarmChain aggregators ${chain.aggregators.length}`);
-  [...chain.humans, ...chain.ambiguous].some(h => h.poster.name === 'Pat Staffing') === false ? pass('runWarmChain drops US-only') : fail('runWarmChain US-only leaked');
+  [...chain.humans, ...chain.ambiguous].some(h => h.poster.name === 'Pat Staffing') === true ? pass('runWarmChain keeps US recruiter (in-region under UK+Europe+US)') : fail('runWarmChain US recruiter dropped');
   [...chain.humans, ...chain.ambiguous].some(h => h.poster.name === 'Chris Seeker') === false ? pass('runWarmChain drops job-seeker') : fail('runWarmChain job-seeker leaked');
 
-  // Region gate must veto a US-location post even when its text contains an allow-word ('remote').
+  // US is in-region (UK+Europe+US policy) — a US-location post is kept, not vetoed (CP-12).
   const usItem = [{ author: { name: 'US Co', headline: 'Recruiter', profile_url: 'https://x/us', location: 'San Francisco, United States' }, text: 'AI Engineer, fully remote, £600/day outside IR35', url: 'https://ln.co/posts/us-zz99', posted_at: '2026-07-08T00:00:00Z', reactions: { total: 1 } }];
   const usChain = runWarmChain(usItem, cfg);
-  (usChain.humans.length === 0 && usChain.aggregators.length === 0 && usChain.ambiguous.length === 0) ? pass('runWarmChain vetoes US-location despite remote in text') : fail('runWarmChain US-location leaked via text allow-word');
+  usChain.humans.length === 1 ? pass('runWarmChain keeps US-location (in-region under UK+Europe+US)') : fail(`runWarmChain US-location bucket humans=${usChain.humans.length} amb=${usChain.ambiguous.length} agg=${usChain.aggregators.length}`);
 
   // Cost + row format
   estimateCost({ keywords: ['a', 'b'], limit: 30 }) === 0.3 ? pass('estimateCost 2×30') : fail('estimateCost');
@@ -4934,6 +4934,18 @@ console.log('\n33. CP-12 region-gate country precision');
   // block_locations is a manual override veto (wins over allow)
   const blocked = buildWarmRegionFilter({ block_locations: ['london'] });
   (blocked('London, United Kingdom') === false && blocked('Manchester') === true) ? pass('buildWarmRegionFilter block override') : fail('buildWarmRegionFilter block override');
+
+  const { runWarmChain } = await import(pathToFileURL(join(ROOT, 'warm-scan.mjs')).href);
+  const cfg33 = { location_filter: { allow: ['united kingdom', 'london', 'uk'] }, aggregator_pages: [], jobseeker_signals: [] };
+  const rows33 = [
+    { author: { name: 'India Recruiter', headline: 'Talent Partner', profile_url: 'https://x/i1', location: 'Remote (India)' }, text: 'Hiring AI Engineer, outside IR35, £600/day', url: 'https://ln/p/i1', posted_at: '2026-07-10T00:00:00Z' },
+    { author: { name: 'UK Recruiter', headline: 'Talent Partner', profile_url: 'https://x/u1', location: 'London, England, United Kingdom' }, text: 'Hiring AI Engineer, outside IR35, £600/day', url: 'https://ln/p/u1', posted_at: '2026-07-10T00:00:00Z' },
+    { author: { name: 'US Recruiter', headline: 'Talent Partner', profile_url: 'https://x/s1', location: 'San Francisco, United States' }, text: 'Hiring ML Engineer, £700/day', url: 'https://ln/p/s1', posted_at: '2026-07-10T00:00:00Z' },
+  ];
+  const ch33 = runWarmChain(rows33, cfg33);
+  const all33 = [...ch33.humans, ...ch33.ambiguous, ...ch33.aggregators].map(r => r.poster.name);
+  all33.includes('India Recruiter') === false ? pass('runWarmChain drops Remote (India)') : fail('runWarmChain Remote(India) leaked');
+  (all33.includes('UK Recruiter') && all33.includes('US Recruiter')) ? pass('runWarmChain keeps UK + US locations') : fail(`runWarmChain kept ${all33.join(',')}`);
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────

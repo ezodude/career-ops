@@ -10,7 +10,7 @@ import { makeHttpCtx } from './providers/_http.mjs';
 import yaml from 'js-yaml';
 import { makeGeminiClassifier, mergeHiringVerdicts, HIRING_INTENT_DEFAULT_MODEL } from './hiring-intent.mjs';
 
-const { compileKeyword, buildLocationFilter } = await import(_p(process.cwd() + '/scan.mjs').href);
+const { compileKeyword } = await import(_p(process.cwd() + '/scan.mjs').href);
 const { mapApifyPost, fetchPosts, isPageProfile } = await import(_p(process.cwd() + '/providers/apify-posts.mjs').href);
 
 /** True when post text matches any job-seeker signal (wrong direction — drop). @param {string} text @param {string[]} signals @returns {boolean} */
@@ -52,7 +52,7 @@ export function buildWarmTags(record) {
  * @returns {{humans:object[], aggregators:object[], ambiguous:object[]}}
  */
 export function runWarmChain(rawItems, config) {
-  const passesRegion = buildLocationFilter(config?.location_filter);
+  const passesRegion = buildWarmRegionFilter(config);
   const seekerSignals = Array.isArray(config?.jobseeker_signals) ? config.jobseeker_signals : [];
   const aggPages = Array.isArray(config?.aggregator_pages) ? config.aggregator_pages : [];
   const seenUrl = new Set();
@@ -64,8 +64,7 @@ export function runWarmChain(rawItems, config) {
     const rec = mapApifyPost(raw);
     if (!rec.url || seenUrl.has(rec.url)) continue;            // URL dedup
     if (isJobSeeker(rec.text, seekerSignals)) continue;       // wrong direction
-    const region = `${rec.location} ${rec.text}`.trim();       // combined region gate: block-term anywhere → veto; else an allow-word in text can rescue a non-blocked location
-    if (!passesRegion(region)) continue;
+    if (!passesRegion(rec.location)) continue;                 // region judged on location alone (CP-12)
     const sig = dupeSignature(rec);                            // near-dup dedup
     if (sig && seenSig.has(sig)) continue;
     seenUrl.add(rec.url);
