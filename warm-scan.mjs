@@ -141,9 +141,9 @@ export function dupeSignature(rec) {
 }
 
 const WARM_LEADS_PATH = 'data/warm-leads.md';
-const WARM_SKELETON = `# Warm leads — LinkedIn hiring posts\n\nOpt-in warm-signal discovery (CP-8). Run \`node warm-scan.mjs --spend\` to refresh.\n\n## Warm leads\n\n## Aggregators\n`;
+const WARM_SKELETON = `# Warm leads — dedup ledger + archive (CP-8)\n\nMachine-maintained by warm-scan.mjs. This is the cross-run dedup ledger that decides what counts as "new" — you don't need to open it. See data/this-week.md for the combined ranked view you act on.\n\n## Warm leads\n\n## Aggregators\n`;
 const WARM_DIGEST_PATH = 'data/warm-digest.md';
-const DIGEST_SKELETON = `# Warm digest — new leads per run\n\nNewest first. Written by warm-scan.mjs on each --spend run.\n`;
+const DIGEST_SKELETON = `# Warm digest — per-run new-leads feed\n\nNewest first. Written by warm-scan.mjs each --spend run; consumed by weekly.mjs → data/this-week.md (the file you actually open).\n`;
 
 /** Render one warm-leads markdown row. @param {object} record @returns {string} */
 export function formatWarmLead(record) {

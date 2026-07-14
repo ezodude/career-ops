@@ -267,13 +267,15 @@ Everything else — `scan.mjs`, `scan-ats-full.mjs`, `weekly.mjs`, Gemini hiring
 
 ## 6. Outputs at a glance
 
-| File | Written by | Cumulative? | Read it for |
-|------|------------|-------------|-------------|
-| `data/this-week.md` | `weekly.mjs` | No (overwritten each run) | Ranked triage — warm first, then board |
-| `data/warm-digest.md` | `warm-scan.mjs` | Yes (newest section first) | Per-run warm lead batches |
-| `data/warm-leads.md` | `warm-scan.mjs` | Yes (URL-deduplicated) | Full cumulative warm lead log |
-| `data/pipeline.md` | `scan.mjs`, `scan-ats-full.mjs` | Yes | All pending board/ATS offers |
-| `data/scan-history.tsv` | `scan.mjs`, `scan-ats-full.mjs` | Yes | URL dedup ledger (seen URLs never re-added) |
+**Which file do I open? → only `data/this-week.md`.** Everything else is plumbing that keeps that file correct — you rarely need to look at it.
+
+| File | Written by | Cumulative? | Role |
+|------|------------|-------------|------|
+| **`data/this-week.md`** | `weekly.mjs` | No (overwritten each run) | **The one you open** — ranked triage, warm first then board |
+| `data/warm-digest.md` | `warm-scan.mjs` | Yes (newest section first) | Plumbing — per-run new-leads feed that `weekly.mjs` consumes |
+| `data/warm-leads.md` | `warm-scan.mjs` | Yes (URL-deduplicated) | Plumbing — cross-run **dedup ledger** + archive; the memory that decides what's "new" (delete it and the next run re-reports everything). Also the future CP-4 reachability input |
+| `data/pipeline.md` | `scan.mjs`, `scan-ats-full.mjs` | Yes | Full board/ATS inbox — the source `weekly.mjs` ranks from |
+| `data/scan-history.tsv` | `scan.mjs`, `scan-ats-full.mjs` | Yes | Board URL dedup ledger (seen URLs never re-added) |
 | `data/scan-runner.log` | launchd / scan-runner.sh | Yes (appended) | Runner history, error diagnosis |
 
 All `data/*` files are gitignored and never committed.
