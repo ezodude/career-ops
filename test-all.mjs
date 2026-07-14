@@ -4975,6 +4975,22 @@ console.log('\n34. Combined weekly digest');
   const pipeMd = ['# Pipeline', '', '## Pending', '', '- [ ] https://p/1 | C | T1', '- [x] https://p/done | D | T2', '- [ ] https://p/2 | E | T3'].join('\n');
   const pend = extractPendingBoard(pipeMd);
   (pend.length === 2 && pend.join('\n').includes('/1') && !pend.join('\n').includes('/done')) ? pass('extractPendingBoard unchecked-only') : fail(`extractPendingBoard got ${pend.length}`);
+
+  const { scoreRecord, rankAndCap, OUT_OF_REGION_HINTS } = await import(pathToFileURL(join(ROOT, 'weekly.mjs')).href);
+
+  const warmUk = parseLine('- [ ] https://ln/p/1 | Jane R — Recruiter  [warm] [UK] [outside IR35] £600/day', 'warm');
+  const boardUk = parseLine('- [ ] https://gh/2 | Acme | AI Engineer London  [contract?] [Greenhouse]', 'board');
+  const boardIn = parseLine('- [ ] https://gh/3 | Deepgram | Senior Solutions Architect - India  [remote] [Ashby]', 'board');
+  scoreRecord(warmUk) > scoreRecord(boardUk) ? pass('score warm outranks board') : fail('score warm !> board');
+  scoreRecord(boardUk) > scoreRecord(boardIn) ? pass('score in-region outranks out-of-region') : fail('score region order');
+  scoreRecord(boardIn) < 0 ? pass('score out-of-region negative') : fail(`score india got ${scoreRecord(boardIn)}`);
+  Array.isArray(OUT_OF_REGION_HINTS) && OUT_OF_REGION_HINTS.includes('india') ? pass('OUT_OF_REGION_HINTS has india') : fail('OUT_OF_REGION_HINTS');
+
+  const board10 = Array.from({ length: 10 }, (_, i) => parseLine(`- [ ] https://gh/b${i} | Co${i} | AI Engineer London  [contract?]`, 'board'));
+  const ranked = rankAndCap([warmUk], [...board10, boardIn], { boardCap: 3 });
+  (ranked.warm.length === 1 && ranked.board.length === 3) ? pass('rankAndCap warm-all + board-capped') : fail(`rankAndCap ${ranked.warm.length}/${ranked.board.length}`);
+  (ranked.hidden === 8 && !ranked.board.some(r => r.url === 'https://gh/3')) ? pass('rankAndCap hides overflow + out-of-region') : fail(`rankAndCap hidden=${ranked.hidden}`);
+  ranked.board.every((r, i, a) => i === 0 || a[i - 1].score >= r.score) ? pass('rankAndCap board sorted desc') : fail('rankAndCap board sort');
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────

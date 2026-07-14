@@ -8,7 +8,7 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const _p = pathToFileURL;
 
 // Reuse CP-12's region primitives (warm-scan.mjs main() is guarded, so this import is side-effect-free).
-const { regionTokenMatch, ALLOWED_REGIONS } = await import(_p(join(ROOT, 'warm-scan.mjs')).href);
+const { regionTokenMatch, ALLOWED_REGIONS } = /** @type {{regionTokenMatch:(text:string,token:string)=>boolean, ALLOWED_REGIONS:string[]}} */ (await import(_p(join(ROOT, 'warm-scan.mjs')).href));
 
 /** Extract [tag] tokens (lowercased, de-bracketed) from a string. @param {string} s @returns {string[]} */
 function extractTags(s) {
@@ -72,4 +72,44 @@ export function extractPendingBoard(md) {
     if (/^\s*-\s*\[\s\]\s/.test(lines[i])) out.push(lines[i]); // unchecked only
   }
   return out;
+}
+
+/** @typedef {{source:string, url:string, text:string, tags:string[], dayRate:string|null, ir35:boolean, raw:string, score?:number}} LeadRecord */
+
+/** Regions that sink in the ranking (heuristic demote-only, NOT a hard filter). Lowercase, word-boundary matched. */
+export const OUT_OF_REGION_HINTS = [
+  'india', 'pakistan', 'bangladesh', 'sri lanka', 'philippines', 'nigeria', 'kenya', 'egypt',
+  'dubai', 'uae', 'u.a.e', 'united arab emirates', 'qatar', 'saudi', 'ksa', 'bahrain', 'kuwait', 'oman',
+  'singapore', 'malaysia', 'indonesia', 'vietnam', 'thailand',
+  'brazil', 'mexico', 'argentina', 'colombia', 'chile', 'peru', 'latin america', 'south america',
+];
+
+const REGION_TAGS = ['uk', 'emea', 'europe', 'london', 'gb'];
+
+/** Score a record for ranking (higher = act sooner). @param {LeadRecord} rec @returns {number} */
+export function scoreRecord(rec) {
+  let s = 0;
+  if (rec.source === 'warm') s += 100;
+  const inRegion = rec.tags.some(t => REGION_TAGS.includes(t)) || ALLOWED_REGIONS.some(tok => regionTokenMatch(rec.text, tok));
+  if (inRegion) s += 30;
+  if (OUT_OF_REGION_HINTS.some(h => regionTokenMatch(rec.text, h))) s -= 100;
+  if (rec.ir35) s += 20;
+  if (rec.dayRate) s += 15;
+  if (rec.tags.includes('contract?')) s += 5;
+  return s;
+}
+
+/**
+ * Rank warm (all kept, sorted) + board (sorted, score<0 dropped, then capped). Overflow + drops counted in `hidden`.
+ * @param {LeadRecord[]} warm @param {LeadRecord[]} board @param {{boardCap?:number}} [opts]
+ * @returns {{warm:LeadRecord[], board:LeadRecord[], hidden:number}}
+ */
+export function rankAndCap(warm, board, opts = {}) {
+  const boardCap = Number.isFinite(opts.boardCap) ? Number(opts.boardCap) : 15;
+  /** @param {LeadRecord[]} arr @returns {LeadRecord[]} */
+  const rank = arr => arr.map(r => ({ ...r, score: scoreRecord(r) })).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const warmRanked = rank(warm);
+  const boardRanked = rank(board);
+  const boardKept = boardRanked.filter(r => (r.score ?? 0) >= 0).slice(0, boardCap);
+  return { warm: warmRanked, board: boardKept, hidden: boardRanked.length - boardKept.length };
 }
