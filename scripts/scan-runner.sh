@@ -32,6 +32,9 @@ WARM_OUT="$(run 'node --env-file=.env warm-scan.mjs --spend' 2>&1)"; echo "$WARM
 NEW_WARM="$(printf '%s' "$WARM_OUT" | sed -n 's/^NEW_WARM=//p' | tail -1)"
 [ -z "$NEW_WARM" ] && NEW_WARM=0
 
+# Combined weekly digest → this-week.md (free; newest warm + top in-region board offers)
+run 'node weekly.mjs' 2>&1 | tail -1
+
 # Notify
 if [ "$NEW_WARM" = "SKIPPED_BUDGET" ]; then
   NOTE="warm skipped — near Apify cap · ${NEW_OFFERS} new board offers"
@@ -51,7 +54,7 @@ case "$NEW_WARM" in
 esac
 
 if [ "$OPEN" = "1" ]; then
-  PROMPT="Triage the ${NEW_WARM} new warm leads in data/warm-digest.md — help me shortlist and draft outreach."
+  PROMPT="Triage this week's combined digest in data/this-week.md (${NEW_WARM} new warm leads + top board offers) — help me shortlist and draft outreach."
   if [ "$DRY_RUN" = "--dry-run" ]; then
     echo "DRY open-session: $PROMPT"
   else
