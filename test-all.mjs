@@ -4947,6 +4947,36 @@ console.log('\n33. CP-12 region-gate country precision');
   (all33.includes('UK Recruiter') && all33.includes('US Recruiter')) ? pass('runWarmChain keeps UK + US locations') : fail(`runWarmChain kept ${all33.join(',')}`);
 }
 
+console.log('\n34. Combined weekly digest');
+{
+  const { parseLine, extractNewestWarmSection, extractPendingBoard } = await import(pathToFileURL(join(ROOT, 'weekly.mjs')).href);
+
+  const w = parseLine('- [ ] https://ln/p/x1 | Nermin Kadiric — Senior TA Partner  [warm] [UK] [outside IR35] £750/day', 'warm');
+  (w && w.url === 'https://ln/p/x1' && w.source === 'warm') ? pass('parseLine warm url/source') : fail('parseLine warm url/source');
+  (w && w.ir35 === true && w.dayRate === '£750/day') ? pass('parseLine warm ir35+rate') : fail(`parseLine warm ir35/rate got ${w && w.dayRate}`);
+  (w && w.tags.includes('uk') && w.text.includes('Nermin Kadiric') && !w.text.includes('[')) ? pass('parseLine warm tags/text') : fail('parseLine warm tags/text');
+
+  const rateDash = parseLine('- [ ] https://ln/p/x2 | Dan O — Recruiter  [warm] [remote] [outside IR35] £550-650perday', 'warm');
+  (rateDash && rateDash.dayRate === '£550-650perday') ? pass('parseLine range rate') : fail(`parseLine range rate got ${rateDash && rateDash.dayRate}`);
+
+  const b = parseLine('- [ ] https://job-boards.greenhouse.io/humeai/jobs/1 | Hume AI | AI Researcher  [contract?] [remote] [Greenhouse]', 'board');
+  (b && b.source === 'board' && b.text === 'Hume AI | AI Researcher' && b.tags.includes('contract?')) ? pass('parseLine board') : fail(`parseLine board got "${b && b.text}"`);
+
+  (parseLine('## Pending', 'board') === null && parseLine('- [ ] not-a-url foo', 'board') === null) ? pass('parseLine rejects non-lead') : fail('parseLine rejects non-lead');
+
+  const digestMd = [
+    '# Warm digest', '', '## 2026-07-13 (2 new)', '',
+    '- [ ] https://ln/p/a | A — r  [warm] [UK]', '- [ ] https://ln/p/b | B — r  [warm] [remote]', '',
+    '## 2026-07-06 (1 new)', '', '- [ ] https://ln/p/old | Old — r  [warm]',
+  ].join('\n');
+  const newest = extractNewestWarmSection(digestMd);
+  (newest.filter(l => l.includes('https')).length === 2 && !newest.join('\n').includes('/old')) ? pass('extractNewestWarmSection') : fail(`extractNewestWarmSection got ${newest.length}`);
+
+  const pipeMd = ['# Pipeline', '', '## Pending', '', '- [ ] https://p/1 | C | T1', '- [x] https://p/done | D | T2', '- [ ] https://p/2 | E | T3'].join('\n');
+  const pend = extractPendingBoard(pipeMd);
+  (pend.length === 2 && pend.join('\n').includes('/1') && !pend.join('\n').includes('/done')) ? pass('extractPendingBoard unchecked-only') : fail(`extractPendingBoard got ${pend.length}`);
+}
+
 // ── SUMMARY ─────────────────────────────────────────────────────
 
 console.log('\n' + '='.repeat(50));
