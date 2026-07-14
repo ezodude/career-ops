@@ -289,6 +289,26 @@ node scan-ats-full.mjs --md-out notes/scans    # also write a dated markdown dig
 
 ---
 
+## weekly
+
+Combined weekly digest. Reads the newest dated section of `data/warm-digest.md` and unchecked pending items from `data/pipeline.md`, ranks them (warm first; in-region and outside-IR35 bonuses; out-of-region demote), and writes `data/this-week.md`. Free — no network calls, no LLM tokens.
+
+The out-of-region demote is a ranking heuristic: board offers outside the target region sink in the list, but are not deleted. The hidden count is noted at the bottom of `data/this-week.md`; the full inbox remains in `data/pipeline.md`.
+
+```bash
+node weekly.mjs                  # write data/this-week.md
+node weekly.mjs --board-cap=20   # cap board section at 20 offers (default: 15)
+node weekly.mjs --dry-run        # print to stdout without writing
+```
+
+**Cost:** free.
+
+**Output:** `data/this-week.md` (overwritten each run). Log line: `WEEKLY_WRITTEN warm=N board=M hidden=K → data/this-week.md` (or `(dry-run)` suffix).
+
+**Exit codes:** `0` always (missing source files are treated as empty, not errors).
+
+---
+
 ## tracker
 
 SQLite **derived index** for the applications tracker (RFC #918, phase 1). `data/applications.md` stays the source of truth; `data/applications.db` is built from it by `sync` and is safe to delete at any time — it regenerates on the next sync. All writes keep going to the markdown exactly as today (`merge-tracker.mjs`, hand edits); the index is read-only infrastructure.
