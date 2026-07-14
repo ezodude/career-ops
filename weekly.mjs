@@ -127,7 +127,7 @@ export function renderThisWeek(ranked, date) {
     '### Board / ATS', '',
     ranked.board.length ? ranked.board.map(line).join('\n') : '_(no in-region board offers)_',
   ];
-  if (ranked.hidden > 0) out.push('', `_(${ranked.hidden} board offers hidden: out-of-region or low-signal — see data/pipeline.md)_`);
+  if (ranked.hidden > 0) out.push('', `_(${ranked.hidden} board offers hidden — beyond the top ${ranked.board.length} kept (out-of-region demoted or over the cap); full inbox in data/pipeline.md)_`);
   out.push('');
   return out.join('\n');
 }
@@ -150,4 +150,6 @@ export async function main(argv = process.argv.slice(2)) {
   return ranked;
 }
 
-if (process.argv[1] && import.meta.url === _p(process.argv[1]).href) main();
+if (process.argv[1] && import.meta.url === _p(process.argv[1]).href) {
+  main().catch(err => { console.error(err instanceof Error ? err.message : err); process.exit(1); });
+}
