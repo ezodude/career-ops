@@ -4991,6 +4991,14 @@ console.log('\n34. Combined weekly digest');
   (ranked.warm.length === 1 && ranked.board.length === 3) ? pass('rankAndCap warm-all + board-capped') : fail(`rankAndCap ${ranked.warm.length}/${ranked.board.length}`);
   (ranked.hidden === 8 && !ranked.board.some(r => r.url === 'https://gh/3')) ? pass('rankAndCap hides overflow + out-of-region') : fail(`rankAndCap hidden=${ranked.hidden}`);
   ranked.board.every((r, i, a) => i === 0 || a[i - 1].score >= r.score) ? pass('rankAndCap board sorted desc') : fail('rankAndCap board sort');
+
+  const { renderThisWeek } = await import(pathToFileURL(join(ROOT, 'weekly.mjs')).href);
+  const md = renderThisWeek({ warm: [{ url: 'https://ln/p/1', text: 'Jane R — Recruiter', dayRate: '£600/day' }], board: [{ url: 'https://gh/2', text: 'Acme | AI Engineer', dayRate: null }], hidden: 4 }, '2026-07-14');
+  (md.includes('## 2026-07-14 (1 warm · 1 board)') && md.includes('### Warm (act first)') && md.includes('### Board / ATS')) ? pass('renderThisWeek sections') : fail('renderThisWeek sections');
+  (md.includes('- [ ] https://ln/p/1 | Jane R — Recruiter £600/day') && md.includes('- [ ] https://gh/2 | Acme | AI Engineer')) ? pass('renderThisWeek lines') : fail('renderThisWeek lines');
+  md.includes('4 board offers hidden') ? pass('renderThisWeek hidden note') : fail('renderThisWeek hidden note');
+  const empty = renderThisWeek({ warm: [], board: [], hidden: 0 }, '2026-07-14');
+  (empty.includes('no new warm leads') && empty.includes('no in-region board offers')) ? pass('renderThisWeek empty state') : fail('renderThisWeek empty state');
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────
