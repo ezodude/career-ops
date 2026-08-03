@@ -4999,6 +4999,42 @@ console.log('\n34. Combined weekly digest');
   md.includes('4 board offers hidden') ? pass('renderThisWeek hidden note') : fail('renderThisWeek hidden note');
   const empty = renderThisWeek({ warm: [], board: [], hidden: 0 }, '2026-07-14');
   (empty.includes('no new warm leads') && empty.includes('no in-region board offers')) ? pass('renderThisWeek empty state') : fail('renderThisWeek empty state');
+
+  // ── noise gates: [intent?] exclusion + day-rate floor ──
+  const { isLowIntent, rateBelowFloor, readRateFloor } = await import(pathToFileURL(join(ROOT, 'weekly.mjs')).href);
+
+  const intentLead = parseLine('- [ ] https://ln/p/i1 | Spam Recruiter — TA Specialist  [warm] [intent?]', 'warm');
+  const cleanLead = parseLine('- [ ] https://ln/p/c1 | Theo W — Cititec  [warm] [UK] [outside IR35] £1,000/day', 'warm');
+  isLowIntent(intentLead) ? pass('isLowIntent flags [intent?]') : fail('isLowIntent flags [intent?]');
+  !isLowIntent(cleanLead) ? pass('isLowIntent passes clean lead') : fail('isLowIntent passes clean lead');
+
+  const lowRate = parseLine('- [ ] https://ln/p/r1 | Robert S — Senior Consultant  [warm] [outside IR35] £250–£275/day', 'warm');
+  const edgeRate = parseLine('- [ ] https://ln/p/r2 | Dan O — Recruiter  [warm] [outside IR35] £550-650perday', 'warm');
+  const noRate = parseLine('- [ ] https://ln/p/r3 | Olly S — Cognify  [warm] [outside IR35]', 'warm');
+  rateBelowFloor(lowRate, 650) ? pass('rateBelowFloor drops £250-275') : fail('rateBelowFloor drops £250-275');
+  !rateBelowFloor(edgeRate, 650) ? pass('rateBelowFloor keeps range topping at floor') : fail('rateBelowFloor keeps £550-650');
+  !rateBelowFloor(cleanLead, 650) ? pass('rateBelowFloor handles comma thousands') : fail('rateBelowFloor £1,000 misparsed');
+  !rateBelowFloor(noRate, 650) ? pass('rateBelowFloor keeps unstated rate') : fail('rateBelowFloor keeps unstated rate');
+  !rateBelowFloor(lowRate, null) ? pass('rateBelowFloor fail-open when no floor') : fail('rateBelowFloor fail-open');
+
+  const gated = rankAndCap([cleanLead, intentLead, lowRate, noRate], [], { rateFloor: 650 });
+  (gated.warm.length === 2 && gated.dropped === 2) ? pass('rankAndCap gates warm noise') : fail(`rankAndCap gated ${gated.warm.length}/${gated.dropped}`);
+  !gated.warm.some(r => r.url === 'https://ln/p/i1' || r.url === 'https://ln/p/r1') ? pass('rankAndCap excludes gated urls') : fail('rankAndCap excludes gated urls');
+
+  const boardIntent = parseLine('- [ ] https://gh/9 | Acme | AI Engineer London  [contract?] [intent?]', 'board');
+  const boardGated = rankAndCap([], [boardIntent, boardUk], { boardCap: 15, rateFloor: 650 });
+  (boardGated.board.length === 1 && boardGated.dropped === 1 && boardGated.hidden === 0) ? pass('rankAndCap gates board noise before cap') : fail(`board gate ${boardGated.board.length}/${boardGated.dropped}/${boardGated.hidden}`);
+
+  const ungated = rankAndCap([cleanLead, intentLead, lowRate], [], {});
+  (ungated.warm.length === 2 && ungated.dropped === 1) ? pass('rankAndCap without floor still gates intent') : fail(`ungated ${ungated.warm.length}/${ungated.dropped}`);
+
+  const droppedMd = renderThisWeek({ warm: [], board: [], hidden: 0, dropped: 3 }, '2026-07-14');
+  droppedMd.includes('3 low-signal leads dropped') ? pass('renderThisWeek dropped note') : fail('renderThisWeek dropped note');
+  !empty.includes('low-signal leads dropped') ? pass('renderThisWeek omits dropped note at zero') : fail('renderThisWeek omits dropped note at zero');
+
+  const floor = readRateFloor(ROOT);
+  (floor === null || (typeof floor === 'number' && floor > 0)) ? pass('readRateFloor returns null or positive') : fail(`readRateFloor got ${floor}`);
+  readRateFloor(join(ROOT, 'no-such-dir')) === null ? pass('readRateFloor fail-open on missing profile') : fail('readRateFloor missing profile');
 }
 
 // ── SUMMARY ─────────────────────────────────────────────────────

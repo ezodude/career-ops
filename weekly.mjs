@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import yaml from 'js-yaml';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const _p = pathToFileURL;
@@ -76,6 +77,46 @@ export function extractPendingBoard(md) {
 
 /** @typedef {{source:string, url:string, text:string, tags:string[], dayRate:string|null, ir35:boolean, raw:string, score?:number}} LeadRecord */
 
+/**
+ * Read the machine-readable day-rate floor from the user layer (config/profile.yml).
+ * Returns null when the file, key, or a valid positive number is absent — callers
+ * then skip rate filtering entirely (fail-open, never silently drops on misconfig).
+ * @param {string} [root] @returns {number|null}
+ */
+export function readRateFloor(root = ROOT) {
+  const p = join(root, 'config', 'profile.yml');
+  if (!existsSync(p)) return null;
+  try {
+    const doc = /** @type {any} */ (yaml.load(readFileSync(p, 'utf8')));
+    const v = doc?.compensation?.day_rate_floor_gbp;
+    return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+  } catch {
+    return null; // malformed profile.yml must not break the weekly digest
+  }
+}
+
+/**
+ * True when a lead's STATED day rate tops out below the floor. Uses the UPPER bound of
+ * a range (so "£550-650" clears a 650 floor) — the generous direction, matching the
+ * pipeline rule that a false drop costs more than a false keep. No stated rate → false.
+ * @param {LeadRecord} rec @param {number|null} floor @returns {boolean}
+ */
+export function rateBelowFloor(rec, floor) {
+  if (!floor || !rec.dayRate) return false;
+  const nums = (rec.dayRate.match(/\d[\d,]*/g) || []).map(/** @param {string} n */ n => Number(n.replace(/,/g, ''))).filter(Number.isFinite);
+  return nums.length > 0 && Math.max(...nums) < floor;
+}
+
+/**
+ * Low-signal gate. `[intent?]` marks a lead the CP-11 classifier could not confirm as a
+ * hiring post (or could not reach the classifier at all) — in practice offshore staffing
+ * spam and opinion posts. Excluded from this-week.md; still archived in warm-digest.md.
+ * @param {LeadRecord} rec @returns {boolean}
+ */
+export function isLowIntent(rec) {
+  return rec.tags.includes('intent?');
+}
+
 /** Regions that sink in the ranking (heuristic demote-only, NOT a hard filter). Lowercase, word-boundary matched. */
 export const OUT_OF_REGION_HINTS = [
   'india', 'pakistan', 'bangladesh', 'sri lanka', 'philippines', 'nigeria', 'kenya', 'egypt',
@@ -100,21 +141,29 @@ export function scoreRecord(rec) {
 }
 
 /**
- * Rank warm (all kept, sorted) + board (sorted, score<0 dropped, then capped). Overflow + drops counted in `hidden`.
- * @param {LeadRecord[]} warm @param {LeadRecord[]} board @param {{boardCap?:number}} [opts]
- * @returns {{warm:LeadRecord[], board:LeadRecord[], hidden:number}}
+ * Rank warm (all kept, sorted) + board (sorted, score<0 dropped, then capped). Board overflow
+ * counted in `hidden`; low-intent + below-floor leads from BOTH sources counted in `dropped`.
+ * @param {LeadRecord[]} warm @param {LeadRecord[]} board
+ * @param {{boardCap?:number, rateFloor?:number|null}} [opts]
+ * @returns {{warm:LeadRecord[], board:LeadRecord[], hidden:number, dropped:number}}
  */
 export function rankAndCap(warm, board, opts = {}) {
   const boardCap = Number.isFinite(opts.boardCap) ? Number(opts.boardCap) : 15;
+  const rateFloor = opts.rateFloor ?? null;
+  /** Noise gates run BEFORE ranking so dropped leads never consume a board-cap slot. */
+  const signal = /** @param {LeadRecord} r */ r => !isLowIntent(r) && !rateBelowFloor(r, rateFloor);
+  const warmSignal = warm.filter(signal);
+  const boardSignal = board.filter(signal);
+  const dropped = (warm.length - warmSignal.length) + (board.length - boardSignal.length);
   /** @param {LeadRecord[]} arr @returns {LeadRecord[]} */
   const rank = arr => arr.map(r => ({ ...r, score: scoreRecord(r) })).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const warmRanked = rank(warm);
-  const boardRanked = rank(board);
+  const warmRanked = rank(warmSignal);
+  const boardRanked = rank(boardSignal);
   const boardKept = boardRanked.filter(r => (r.score ?? 0) >= 0).slice(0, boardCap);
-  return { warm: warmRanked, board: boardKept, hidden: boardRanked.length - boardKept.length };
+  return { warm: warmRanked, board: boardKept, hidden: boardRanked.length - boardKept.length, dropped };
 }
 
-/** Render the combined digest markdown. @param {{warm:LeadRecord[],board:LeadRecord[],hidden:number}} ranked @param {string} date @returns {string} */
+/** Render the combined digest markdown. @param {{warm:LeadRecord[],board:LeadRecord[],hidden:number,dropped?:number}} ranked @param {string} date @returns {string} */
 export function renderThisWeek(ranked, date) {
   /** @param {LeadRecord} r */
   const line = r => `- [ ] ${r.url} | ${r.text}${r.dayRate ? ' ' + r.dayRate : ''}`;
@@ -128,6 +177,8 @@ export function renderThisWeek(ranked, date) {
     ranked.board.length ? ranked.board.map(line).join('\n') : '_(no in-region board offers)_',
   ];
   if (ranked.hidden > 0) out.push('', `_(${ranked.hidden} board offers hidden — beyond the top ${ranked.board.length} kept (out-of-region demoted or over the cap); full inbox in data/pipeline.md)_`);
+  const dropped = ranked.dropped ?? 0;
+  if (dropped > 0) out.push('', `_(${dropped} low-signal leads dropped — unconfirmed hiring intent or stated rate below floor; still archived in data/warm-digest.md)_`);
   out.push('');
   return out.join('\n');
 }
@@ -141,12 +192,13 @@ export async function main(argv = process.argv.slice(2)) {
   const boardMd = existsSync(join(ROOT, 'data', 'pipeline.md')) ? readFileSync(join(ROOT, 'data', 'pipeline.md'), 'utf8') : '';
   const warm = /** @type {LeadRecord[]} */ (extractNewestWarmSection(warmMd).map(l => parseLine(l, 'warm')).filter(Boolean));
   const board = /** @type {LeadRecord[]} */ (extractPendingBoard(boardMd).map(l => parseLine(l, 'board')).filter(Boolean));
-  const ranked = rankAndCap(warm, board, { boardCap });
+  const rateFloor = argv.includes('--no-rate-floor') ? null : readRateFloor();
+  const ranked = rankAndCap(warm, board, { boardCap, rateFloor });
   const date = new Date().toISOString().slice(0, 10);
   const md = renderThisWeek(ranked, date);
   if (dryRun) console.log(md);
   else writeFileSync(join(ROOT, 'data', 'this-week.md'), md);
-  console.log(`WEEKLY_WRITTEN warm=${ranked.warm.length} board=${ranked.board.length} hidden=${ranked.hidden}${dryRun ? ' (dry-run)' : ' → data/this-week.md'}`);
+  console.log(`WEEKLY_WRITTEN warm=${ranked.warm.length} board=${ranked.board.length} hidden=${ranked.hidden} dropped=${ranked.dropped}${dryRun ? ' (dry-run)' : ' → data/this-week.md'}`);
   return ranked;
 }
 
